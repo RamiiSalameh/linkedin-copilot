@@ -1,0 +1,37 @@
+{# Unified job progress component.
+   Required: id (container id), bar_id (id for the progress bar element, for JS updates)
+   Optional: title (phase label, default "Processing..."), count_text (e.g. "0 / 0"),
+             detail_text (current item or extra line), show_stop (bool, default true),
+             stop_onclick (e.g. "stopProcessing()"), variant ("", "purple", "warning"),
+             show_bar (bool, default true), aria_label (for progressbar)
+#}
+{% set _title = title | default("Processing...") %}
+{% set _count_text = count_text | default("0 / 0") %}
+{% set _detail_text = detail_text | default("") %}
+{% set _show_stop = show_stop if show_stop is defined else true %}
+{% set _stop_onclick = stop_onclick | default("") %}
+{% set _variant = variant | default("") %}
+{% set _show_bar = show_bar if show_bar is defined else true %}
+{% set _aria_label = aria_label | default("Job progress") %}
+<div id="{{ id }}" class="job-progress job-progress--banner {% if _variant %}job-progress--{{ _variant }}{% endif %}" style="display: none;" role="region" aria-label="{{ _aria_label }}">
+  <div class="job-progress__header">
+    <span class="job-progress__text">
+      <strong class="job-progress__title">{{ _title }}</strong>
+      <span class="job-progress__count" aria-live="polite">{{ _count_text }}</span>
+    </span>
+    {% if _show_stop %}
+    <button type="button" class="job-progress__stop btn btn-danger" onclick="{{ _stop_onclick }}" aria-label="Stop">Stop</button>
+    {% endif %}
+  </div>
+  {% if _show_bar %}
+  <div class="job-progress__bar-container" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" aria-label="{{ _aria_label }}">
+    <div id="{{ bar_id }}" class="job-progress__bar" style="width: 0%;"></div>
+  </div>
+  {% endif %}
+  {% if _detail_text or detail_id %}
+  <p class="job-progress__detail" {% if detail_id %}id="{{ detail_id }}"{% endif %}>{{ _detail_text }}</p>
+  {% endif %}
+  {% if detail_extra_id %}
+  <p class="job-progress__detail job-progress__detail--secondary" id="{{ detail_extra_id }}"></p>
+  {% endif %}
+</div>

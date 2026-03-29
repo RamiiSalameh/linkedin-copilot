@@ -1,0 +1,74 @@
+# Byte-compiled / cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+
+# Virtual environments
+.venv/
+venv/
+env/
+.env/
+ENV/
+
+# Packaging / build
+*.egg-info/
+.eggs/
+dist/
+build/
+*.egg
+
+# Environment & secrets (never commit)
+.env
+.env.*
+!.env.example
+*.pem
+secrets/
+
+# OS / editors
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+logs/
+
+# Local databases
+*.sqlite3
+*.sqlite3-journal
+*.sqlite3-wal
+*.db
+
+# --- App-local data (personal DB, sessions, uploads, exports) ---
+data/logs/
+data/exports/
+data/raw_jobs/
+data/screenshots/
+data/logos/
+data/linkedin_session.json
+
+# Resumes: keep sample only
+data/resumes/*
+!data/resumes/sample_resume.txt
+
+# Profiles: keep template only (add your own copy locally)
+data/profiles/*
+!data/profiles/profile.json
+
+# Local brainstorm / tooling output (not application source)
+.superpowers/
+
+# Editor scratch files (avoid committing env-like content by mistake)
+Untitled
+**/Untitled

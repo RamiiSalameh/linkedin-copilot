@@ -1,0 +1,3433 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <style>
+    /* ========================================
+       SCORE BADGES
+       ======================================== */
+    .score-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: var(--space-xs) var(--space-sm);
+      border-radius: var(--radius-full);
+      font-weight: 600;
+      font-size: var(--text-xs);
+      text-transform: uppercase;
+      letter-spacing: 0.025em;
+      box-shadow: var(--shadow-sm);
+    }
+    .score-apply { 
+      background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+      color: white; 
+    }
+    .score-consider { 
+      background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+      color: white; 
+    }
+    .score-skip { 
+      background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+      color: white; 
+    }
+    
+    /* ========================================
+       STATUS BADGES
+       ======================================== */
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-xs);
+      padding: var(--space-xs) var(--space-sm);
+      border-radius: var(--radius-sm);
+      font-size: var(--text-xs);
+      font-weight: 500;
+    }
+    .status-pending-scrape { 
+      background: rgba(99, 102, 241, 0.15);
+      color: #a5b4fc;
+      border: 1px solid rgba(99, 102, 241, 0.3);
+    }
+    .status-pending-match { 
+      background: rgba(139, 92, 246, 0.15);
+      color: #c4b5fd;
+      border: 1px solid rgba(139, 92, 246, 0.3);
+    }
+    .status-matched { 
+      background: rgba(34, 197, 94, 0.15);
+      color: #86efac;
+      border: 1px solid rgba(34, 197, 94, 0.3);
+    }
+    .status-discovered { 
+      background: rgba(100, 116, 139, 0.15);
+      color: #94a3b8;
+      border: 1px solid rgba(100, 116, 139, 0.3);
+    }
+    .status-applied { 
+      background: rgba(34, 197, 94, 0.2);
+      color: #4ade80;
+      border: 1px solid rgba(34, 197, 94, 0.4);
+    }
+    
+    /* Source badges for job origins */
+    .source-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 8px;
+      border-radius: var(--radius-full);
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+    .source-linkedin {
+      background: rgba(10, 102, 194, 0.15);
+      color: #60a5fa;
+      border: 1px solid rgba(10, 102, 194, 0.3);
+    }
+    .source-greenhouse {
+      background: rgba(46, 204, 113, 0.15);
+      color: #4ade80;
+      border: 1px solid rgba(46, 204, 113, 0.3);
+    }
+    .source-lever {
+      background: rgba(139, 92, 246, 0.15);
+      color: #a78bfa;
+      border: 1px solid rgba(139, 92, 246, 0.3);
+    }
+    .source-workday {
+      background: rgba(251, 146, 60, 0.15);
+      color: #fb923c;
+      border: 1px solid rgba(251, 146, 60, 0.3);
+    }
+    .source-custom {
+      background: rgba(100, 116, 139, 0.15);
+      color: #94a3b8;
+      border: 1px solid rgba(100, 116, 139, 0.3);
+    }
+    
+    .match-score {
+      font-weight: 700;
+      font-size: var(--text-lg);
+      color: var(--text-primary);
+    }
+
+    /* ========================================
+       JOB TABLE
+       ======================================== */
+    .jobs-table-container {
+      background: var(--bg-card);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border-subtle);
+      overflow: hidden;
+    }
+    .jobs-table-container th,
+    .jobs-table-container td {
+      padding: var(--space-sm) var(--space-md);
+      vertical-align: middle;
+    }
+    
+    .job-row {
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+    .job-row:hover {
+      background: var(--bg-hover);
+    }
+    .job-row.selected {
+      background: rgba(59, 130, 246, 0.1);
+      border-left: 3px solid var(--accent-primary);
+    }
+    .job-row.processing {
+      background: rgba(139, 92, 246, 0.05);
+    }
+    
+    .company-logo {
+      width: 36px;
+      height: 36px;
+      border-radius: var(--radius-md);
+      object-fit: cover;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-subtle);
+    }
+    .company-logo-placeholder {
+      width: 36px;
+      height: 36px;
+      border-radius: var(--radius-md);
+      background: linear-gradient(135deg, var(--bg-elevated) 0%, var(--bg-hover) 100%);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-muted);
+      font-size: var(--text-sm);
+      font-weight: 600;
+      border: 1px solid var(--border-subtle);
+    }
+    .company-cell {
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+    }
+    
+    .date-cell {
+      white-space: nowrap;
+      font-size: var(--text-sm);
+    }
+    .date-text {
+      color: var(--text-secondary);
+    }
+    .date-text:hover {
+      color: var(--text-primary);
+    }
+    
+    /* Checkbox styling */
+    .job-checkbox {
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+      accent-color: var(--accent-primary);
+      border-radius: var(--radius-sm);
+    }
+
+    /* ========================================
+       BULK ACTIONS BAR
+       ======================================== */
+    .bulk-actions {
+      display: none;
+      margin-bottom: var(--space-md);
+      padding: var(--space-md);
+      background: var(--bg-elevated);
+      border: 1px solid var(--accent-primary);
+      border-radius: var(--radius-lg);
+      align-items: center;
+      gap: var(--space-md);
+      animation: slideUp var(--transition-normal) ease-out;
+    }
+    .bulk-actions.visible {
+      display: flex;
+      flex-wrap: wrap;
+    }
+    .bulk-actions-count {
+      color: var(--accent-primary);
+      font-weight: 600;
+      font-size: var(--text-sm);
+    }
+    .bulk-btn {
+      padding: var(--space-sm) var(--space-md);
+      border: none;
+      border-radius: var(--radius-md);
+      font-family: var(--font-sans);
+      font-size: var(--text-sm);
+      font-weight: 500;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+    .bulk-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-md);
+    }
+    .bulk-btn:active {
+      transform: translateY(0) scale(0.98);
+    }
+    .bulk-btn-delete { background: var(--accent-danger); color: white; }
+    .bulk-btn-rescrape { background: var(--accent-purple); color: white; }
+    .bulk-btn-rematch { background: var(--accent-primary); color: white; }
+    .bulk-btn-clear { background: var(--bg-hover); color: var(--text-secondary); }
+
+    /* ========================================
+       FILTER BAR
+       ======================================== */
+    .search-row {
+      display: flex;
+      gap: var(--space-md);
+      align-items: center;
+      margin-bottom: var(--space-md);
+      flex-wrap: wrap;
+    }
+    .search-row input[type="text"] {
+      flex: 1;
+      min-width: 280px;
+    }
+    .filter-bar {
+      display: flex;
+      gap: var(--space-md);
+      margin-bottom: var(--space-lg);
+      flex-wrap: wrap;
+    }
+    .filter-bar input[type="text"] {
+      flex: 1;
+      min-width: 240px;
+    }
+    .filter-bar select {
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: var(--space-sm) var(--space-md);
+      font-family: var(--font-sans);
+      font-size: var(--text-sm);
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+    .filter-bar select:focus {
+      outline: none;
+      border-color: var(--accent-primary);
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+    }
+    
+    /* Hide Applied Toggle */
+    .hide-applied-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-sm);
+      cursor: pointer;
+      padding: var(--space-xs) var(--space-sm);
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      transition: all var(--transition-fast);
+      user-select: none;
+    }
+    
+    .hide-applied-toggle:hover {
+      border-color: var(--accent-success);
+      background: rgba(34, 197, 94, 0.05);
+    }
+    
+    .hide-applied-toggle input[type="checkbox"] {
+      display: none;
+    }
+    
+    .toggle-slider {
+      position: relative;
+      width: 36px;
+      height: 20px;
+      background: var(--bg-hover);
+      border-radius: var(--radius-full);
+      transition: all var(--transition-fast);
+    }
+    
+    .toggle-slider::after {
+      content: '';
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 16px;
+      height: 16px;
+      background: white;
+      border-radius: 50%;
+      transition: all var(--transition-fast);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    }
+    
+    .hide-applied-toggle input:checked + .toggle-slider {
+      background: var(--accent-success);
+    }
+    
+    .hide-applied-toggle input:checked + .toggle-slider::after {
+      transform: translateX(16px);
+    }
+    
+    .toggle-label {
+      font-size: var(--text-sm);
+      font-weight: 500;
+      color: var(--text-secondary);
+      white-space: nowrap;
+    }
+    
+    .hide-applied-toggle input:checked ~ .toggle-label {
+      color: var(--accent-success);
+    }
+
+    /* Collapsible filters */
+    .filters-collapsible {
+      margin-bottom: var(--space-lg);
+    }
+    .filters-details {
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      background: var(--bg-elevated);
+      overflow: hidden;
+    }
+    .filters-summary {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: var(--space-sm) var(--space-md);
+      cursor: pointer;
+      list-style: none;
+      font-weight: 500;
+      color: var(--text-secondary);
+      transition: background var(--transition-fast), color var(--transition-fast);
+      user-select: none;
+    }
+    .filters-summary::-webkit-details-marker { display: none; }
+    .filters-summary:hover {
+      background: var(--bg-hover);
+      color: var(--text-primary);
+    }
+    .filters-summary-icon {
+      display: inline-block;
+      width: 18px;
+      height: 18px;
+      transition: transform var(--transition-fast);
+      opacity: 0.8;
+    }
+    .filters-details[open] .filters-summary-icon {
+      transform: rotate(180deg);
+    }
+    .filters-details .filter-bar {
+      margin: 0;
+      padding: var(--space-md);
+      border-top: 1px solid var(--border-subtle);
+    }
+
+    /* ========================================
+       SORTABLE COLUMNS & COLUMN FILTERS
+       ======================================== */
+    th.sortable {
+      cursor: pointer;
+      user-select: none;
+      transition: color var(--transition-fast);
+      position: relative;
+      white-space: nowrap;
+    }
+    th.sortable:hover {
+      color: var(--accent-primary);
+    }
+    th.sortable::after {
+      content: '';
+      display: inline-block;
+      margin-left: 6px;
+      opacity: 0.4;
+      transition: opacity var(--transition-fast);
+    }
+    th.sortable:hover::after {
+      opacity: 0.7;
+    }
+    th.sort-asc::after {
+      border-left: 4px solid transparent;
+      border-right: 4px solid transparent;
+      border-bottom: 5px solid var(--accent-primary);
+      opacity: 1;
+    }
+    th.sort-desc::after {
+      border-left: 4px solid transparent;
+      border-right: 4px solid transparent;
+      border-top: 5px solid var(--accent-primary);
+      opacity: 1;
+    }
+    .th-inner {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .col-filter-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 26px;
+      height: 26px;
+      padding: 0;
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      flex-shrink: 0;
+      position: relative;
+    }
+    .col-filter-btn:hover {
+      background: var(--bg-hover);
+      color: var(--accent-primary);
+    }
+    .col-filter-btn.active {
+      background: var(--accent-primary);
+      color: white;
+    }
+    .col-filter-btn svg {
+      width: 14px;
+      height: 14px;
+    }
+    .col-filter-btn .filter-count {
+      position: absolute;
+      top: -4px;
+      right: -4px;
+      min-width: 16px;
+      height: 16px;
+      padding: 0 4px;
+      border-radius: var(--radius-full);
+      background: var(--accent-primary);
+      color: white;
+      font-size: 10px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    /* Column filter dropdown panel */
+    .col-filter-dropdown {
+      position: fixed;
+      z-index: 1001;
+      min-width: 260px;
+      max-width: 320px;
+      max-height:  min(70vh, 400px);
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+      display: none;
+      flex-direction: column;
+      overflow: hidden;
+      animation: colFilterIn 0.2s ease-out;
+    }
+    .col-filter-dropdown.open {
+      display: flex;
+    }
+    @keyframes colFilterIn {
+      from { opacity: 0; transform: translateY(-6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .col-filter-dropdown .filter-panel-header {
+      padding: var(--space-sm) var(--space-md);
+      border-bottom: 1px solid var(--border-subtle);
+      font-weight: 600;
+      font-size: var(--text-sm);
+      color: var(--text-primary);
+      background: var(--bg-card);
+    }
+    .col-filter-dropdown .filter-search {
+      padding: var(--space-xs) var(--space-sm);
+      border-bottom: 1px solid var(--border-subtle);
+    }
+    .col-filter-dropdown .filter-search input {
+      width: 100%;
+      padding: 8px 12px 8px 32px;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      font-size: var(--text-sm);
+    }
+    .col-filter-dropdown .filter-search input:focus {
+      outline: none;
+      border-color: var(--accent-primary);
+      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+    }
+    .col-filter-dropdown .filter-search {
+      position: relative;
+    }
+    .col-filter-dropdown .filter-search input {
+      padding-left: 32px;
+    }
+    .col-filter-dropdown .filter-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: var(--space-xs);
+      max-height: 220px;
+    }
+    .col-filter-dropdown .filter-option {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 10px;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: background var(--transition-fast);
+      font-size: var(--text-sm);
+      color: var(--text-primary);
+    }
+    .col-filter-dropdown .filter-option:hover {
+      background: var(--bg-hover);
+    }
+    .col-filter-dropdown .filter-option input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      accent-color: var(--accent-primary);
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .col-filter-dropdown .filter-option label {
+      cursor: pointer;
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .col-filter-dropdown .filter-actions {
+      display: flex;
+      gap: 8px;
+      padding: var(--space-sm) var(--space-md);
+      border-top: 1px solid var(--border-subtle);
+      background: var(--bg-card);
+    }
+    .col-filter-dropdown .filter-actions button {
+      flex: 1;
+      padding: 8px 12px;
+      border-radius: var(--radius-md);
+      font-size: var(--text-sm);
+      font-weight: 500;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      border: none;
+    }
+    .col-filter-dropdown .filter-actions .btn-apply {
+      background: var(--accent-primary);
+      color: white;
+    }
+    .col-filter-dropdown .filter-actions .btn-apply:hover {
+      filter: brightness(1.1);
+    }
+    .col-filter-dropdown .filter-actions .btn-clear {
+      background: var(--bg-hover);
+      color: var(--text-secondary);
+    }
+    .col-filter-dropdown .filter-actions .btn-clear:hover {
+      background: var(--border-subtle);
+      color: var(--text-primary);
+    }
+    .col-filter-dropdown .filter-select-all {
+      padding: 6px 10px;
+      font-size: var(--text-xs);
+      color: var(--accent-primary);
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      text-align: left;
+      margin-bottom: 4px;
+    }
+    .col-filter-dropdown .filter-select-all:hover {
+      text-decoration: underline;
+    }
+
+    /* ========================================
+       MODAL
+       ======================================== */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(4px);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+      padding: var(--space-md);
+    }
+    .modal-overlay.active {
+      display: flex;
+    }
+    .modal-content {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-xl);
+      max-width: 720px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 25px 80px rgba(0, 0, 0, 0.6);
+      animation: modalIn var(--transition-normal) ease-out;
+    }
+    @keyframes modalIn {
+      from { 
+        opacity: 0; 
+        transform: scale(0.95) translateY(20px); 
+      }
+      to { 
+        opacity: 1; 
+        transform: scale(1) translateY(0); 
+      }
+    }
+    .modal-header {
+      padding: var(--space-md) var(--space-lg);
+      border-bottom: none;
+      display: flex;
+      align-items: center;
+      gap: var(--space-md);
+      background: linear-gradient(180deg, var(--bg-card) 0%, var(--bg-secondary) 100%);
+      border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .modal-header img {
+      width: 48px;
+      height: 48px;
+      border-radius: var(--radius-md);
+      object-fit: cover;
+      background: var(--bg-elevated);
+      border: 2px solid var(--border-subtle);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+    .modal-header-text {
+      flex: 1;
+      min-width: 0;
+    }
+    .modal-header-text h2 {
+      margin: 0 0 2px 0;
+      font-size: var(--text-base);
+      font-weight: 600;
+      color: var(--text-primary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .modal-header-text p {
+      margin: 0;
+      color: var(--text-muted);
+      font-size: var(--text-xs);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .modal-close {
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: transparent;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      font-size: var(--text-lg);
+      cursor: pointer;
+      color: var(--text-muted);
+      transition: all var(--transition-fast);
+      flex-shrink: 0;
+    }
+    .modal-close:hover {
+      background: var(--bg-elevated);
+      border-color: var(--text-muted);
+      color: var(--text-primary);
+      border-color: var(--border-default);
+    }
+    
+    /* Applied Confirmation Dialog */
+    .applied-dialog-content {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-xl);
+      padding: var(--space-xl);
+      max-width: 380px;
+      text-align: center;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    }
+    .applied-dialog-content h3 {
+      margin: 0 0 var(--space-sm) 0;
+      font-size: var(--text-xl);
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+    .applied-dialog-content p {
+      margin: 0 0 var(--space-lg) 0;
+      color: var(--text-muted);
+      font-size: var(--text-sm);
+    }
+    .dialog-actions {
+      display: flex;
+      gap: var(--space-sm);
+      justify-content: center;
+    }
+    .dialog-actions .btn {
+      min-width: 120px;
+    }
+    .btn-success {
+      background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+      color: white;
+      border: none;
+    }
+    .btn-success:hover {
+      background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+    }
+    
+    .modal-body {
+      padding: var(--space-lg);
+    }
+    .modal-section {
+      margin-bottom: var(--space-md);
+      padding: var(--space-md);
+      background: var(--bg-elevated);
+      border-radius: var(--radius-md);
+      border-left: 3px solid var(--accent-success);
+    }
+    .modal-section:last-child {
+      margin-bottom: 0;
+    }
+    .modal-section h3 {
+      font-size: var(--text-sm);
+      font-weight: 600;
+      margin: 0 0 var(--space-sm) 0;
+      color: var(--text-primary);
+    }
+    .modal-section ul {
+      margin: 0;
+      padding-left: var(--space-md);
+      color: var(--text-secondary);
+    }
+    .modal-section li {
+      margin-bottom: var(--space-xs);
+      line-height: 1.5;
+      font-size: var(--text-sm);
+    }
+    .modal-section.missing-section {
+      border-left-color: var(--accent-warning);
+    }
+    .modal-section.suggestions-section {
+      border-left-color: var(--accent-info);
+    }
+    .modal-section.inferred-section {
+      border-left-color: var(--accent-purple);
+    }
+    
+    /* ========================================
+       TABBED MODAL STYLES
+       ======================================== */
+    .modal-tabbed {
+      max-width: 800px;
+    }
+    
+    .modal-tabs {
+      display: flex;
+      gap: 0;
+      padding: 0 var(--space-lg);
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border-subtle);
+      overflow-x: auto;
+      position: relative;
+    }
+    
+    .modal-tab {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: var(--space-sm) var(--space-md);
+      background: transparent;
+      border: none;
+      border-bottom: 2px solid transparent;
+      color: var(--text-muted);
+      font-size: var(--text-sm);
+      font-weight: 500;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      white-space: nowrap;
+      position: relative;
+      margin-bottom: -1px;
+    }
+    
+    .modal-tab:hover {
+      color: var(--text-primary);
+    }
+    
+    .modal-tab.active {
+      color: var(--accent-primary);
+      border-bottom-color: var(--accent-primary);
+    }
+    
+    .tab-icon {
+      font-size: 0.9em;
+      opacity: 0.8;
+    }
+    
+    .modal-tab.active .tab-icon {
+      opacity: 1;
+    }
+    
+    .tab-panel {
+      display: none;
+      animation: fadeIn var(--transition-fast) ease-out;
+    }
+    
+    .tab-panel.active {
+      display: block;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    /* Overview Tab - Polished Design */
+    .overview-hero {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      padding: var(--space-xl) var(--space-lg);
+      background: linear-gradient(180deg, var(--bg-elevated) 0%, transparent 100%);
+      border-radius: var(--radius-lg);
+      margin-bottom: var(--space-lg);
+    }
+    
+    .overview-logo-large img,
+    .company-logo-placeholder-large {
+      width: 72px;
+      height: 72px;
+      border-radius: var(--radius-md);
+      object-fit: cover;
+      background: var(--bg-card);
+      border: 2px solid var(--border-subtle);
+      margin-bottom: var(--space-md);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+    
+    .company-logo-placeholder-large {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: var(--text-xl);
+      font-weight: 700;
+      color: var(--text-muted);
+    }
+    
+    .overview-job-title {
+      margin: 0 0 var(--space-xs) 0;
+      font-size: var(--text-lg);
+      font-weight: 600;
+      color: var(--text-primary);
+      line-height: 1.3;
+    }
+    
+    .overview-company-name {
+      margin: 0 0 4px 0;
+      font-size: var(--text-base);
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+    
+    .overview-location {
+      margin: 0;
+      font-size: var(--text-sm);
+      color: var(--text-muted);
+    }
+    
+    /* Score Card - Clean centered design */
+    .overview-score {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: var(--space-lg) var(--space-xl);
+      background: linear-gradient(135deg, rgba(34, 197, 94, 0.08) 0%, rgba(16, 185, 129, 0.04) 100%);
+      border: 1px solid rgba(34, 197, 94, 0.15);
+      border-radius: var(--radius-lg);
+      margin-bottom: var(--space-lg);
+    }
+    
+    .overview-score.score-consider-bg {
+      background: linear-gradient(135deg, rgba(234, 179, 8, 0.08) 0%, rgba(245, 158, 11, 0.04) 100%);
+      border-color: rgba(234, 179, 8, 0.15);
+    }
+    
+    .overview-score.score-skip-bg {
+      background: linear-gradient(135deg, rgba(239, 68, 68, 0.08) 0%, rgba(220, 38, 38, 0.04) 100%);
+      border-color: rgba(239, 68, 68, 0.15);
+    }
+    
+    .overview-score .score-circle {
+      position: relative;
+      width: 88px;
+      height: 88px;
+      margin: 0;
+    }
+    
+    .overview-score .score-circle svg {
+      width: 88px;
+      height: 88px;
+    }
+    
+    .overview-score .score-circle-text {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+    
+    .score-details {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--space-xs);
+      margin-top: var(--space-sm);
+    }
+    
+    .score-details .score-badge {
+      font-size: var(--text-sm);
+      padding: var(--space-xs) var(--space-md);
+    }
+    
+    .score-hint {
+      margin: 0;
+      font-size: var(--text-xs);
+      color: var(--text-muted);
+      text-align: center;
+    }
+    
+    /* Meta info - cleaner grid */
+    .overview-meta {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: var(--space-sm);
+      padding: var(--space-md);
+      background: var(--bg-elevated);
+      border-radius: var(--radius-md);
+      margin-bottom: var(--space-lg);
+    }
+    
+    .meta-item {
+      text-align: center;
+      padding: var(--space-sm);
+    }
+    
+    .meta-label {
+      display: block;
+      font-size: 10px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 4px;
+      font-weight: 500;
+    }
+    
+    .meta-value {
+      font-size: var(--text-sm);
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+    
+    .overview-actions {
+      display: flex;
+      justify-content: center;
+      gap: var(--space-md);
+    }
+    
+    /* Description Tab */
+    .description-section {
+      line-height: var(--line-height-relaxed);
+    }
+    
+    .description-text {
+      white-space: pre-wrap;
+      color: var(--text-secondary);
+      font-size: var(--text-sm);
+      line-height: 1.7;
+      max-height: 400px;
+      overflow-y: auto;
+      padding: var(--space-md);
+      background: var(--bg-elevated);
+      border-radius: var(--radius-md);
+      scrollbar-width: thin;
+    }
+    
+    .description-text::-webkit-scrollbar {
+      width: 6px;
+    }
+    
+    .description-text::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    
+    .description-text::-webkit-scrollbar-thumb {
+      background: var(--border-subtle);
+      border-radius: 3px;
+    }
+    
+    /* Match Analysis Tab */
+    .match-empty {
+      text-align: center;
+      padding: var(--space-2xl) var(--space-lg);
+      color: var(--text-muted);
+    }
+    
+    .match-empty .empty-icon {
+      font-size: 3rem;
+      margin-bottom: var(--space-md);
+    }
+    
+    .match-empty .hint {
+      font-size: var(--text-sm);
+      margin-top: var(--space-xs);
+    }
+    
+    .inferred-section {
+      background: var(--accent-success-muted);
+      border-left: 3px solid var(--accent-success);
+      padding: var(--space-md);
+      border-radius: 0 var(--radius-md) var(--radius-md) 0;
+    }
+    
+    .missing-section {
+      background: rgba(239, 68, 68, 0.1);
+      border-left: 3px solid var(--accent-danger);
+      padding: var(--space-md);
+      border-radius: 0 var(--radius-md) var(--radius-md) 0;
+    }
+    
+    .suggestions-section {
+      background: rgba(59, 130, 246, 0.1);
+      border-left: 3px solid var(--accent-primary);
+      padding: var(--space-md);
+      border-radius: 0 var(--radius-md) var(--radius-md) 0;
+    }
+    
+    /* Company Tab */
+    .company-hero {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      padding: var(--space-xl) var(--space-lg);
+      background: linear-gradient(180deg, var(--bg-elevated) 0%, transparent 100%);
+      border-radius: var(--radius-lg);
+    }
+    
+    .company-logo-hero img,
+    .company-logo-placeholder-hero {
+      width: 96px;
+      height: 96px;
+      border-radius: var(--radius-lg);
+      object-fit: cover;
+      background: var(--bg-card);
+      border: 2px solid var(--border-subtle);
+      margin-bottom: var(--space-md);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    }
+    
+    .company-logo-placeholder-hero {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.5rem;
+      font-weight: 700;
+      color: var(--text-muted);
+    }
+    
+    .company-name-hero {
+      margin: 0 0 var(--space-sm) 0;
+      font-size: var(--text-2xl);
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+    
+    .company-location-hero {
+      margin: 0 0 var(--space-lg) 0;
+      font-size: var(--text-base);
+      color: var(--text-muted);
+    }
+    
+    .btn-outline {
+      background: transparent;
+      border: 1px solid var(--border-default);
+      color: var(--text-primary);
+    }
+    
+    .btn-outline:hover {
+      background: var(--bg-hover);
+      border-color: var(--accent-primary);
+      color: var(--accent-primary);
+    }
+    
+    .btn-apply-assistant {
+      background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%);
+      color: white;
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-sm);
+    }
+    
+    .btn-apply-assistant:hover {
+      background: linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%);
+      box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+      color: white;
+      text-decoration: none;
+    }
+    
+    .overview-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-sm);
+      justify-content: center;
+    }
+    
+    /* Mobile responsive tabs */
+    @media (max-width: 600px) {
+      .modal-tabs {
+        padding: 0 var(--space-sm);
+      }
+      
+      .modal-tab {
+        padding: var(--space-sm) var(--space-sm);
+        font-size: var(--text-xs);
+      }
+      
+      .modal-tab span:last-child {
+        display: none;
+      }
+      
+      .tab-icon {
+        font-size: 1.2em;
+      }
+      
+      .overview-meta {
+        gap: var(--space-md);
+      }
+      
+      .overview-score {
+        flex-direction: column;
+        text-align: center;
+      }
+      
+      .score-details {
+        text-align: center;
+      }
+    }
+    
+    #modal-inferred h3 {
+      color: var(--accent-success);
+    }
+    .inferred-hint {
+      font-size: var(--text-sm);
+      color: var(--text-muted);
+      margin: 0 0 var(--space-sm) 0;
+      font-style: italic;
+    }
+    #modal-inferred ul li {
+      color: #86efac;
+    }
+    
+    .description-text {
+      white-space: pre-wrap;
+      line-height: var(--line-height-relaxed);
+      color: var(--text-secondary);
+      max-height: 320px;
+      overflow-y: auto;
+      padding: var(--space-md);
+      background: var(--bg-primary);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      font-size: var(--text-sm);
+    }
+
+    /* ========================================
+       SCORE CIRCLE
+       ======================================== */
+    .score-circle {
+      width: 120px;
+      height: 120px;
+      position: relative;
+      margin: 0 auto var(--space-md);
+    }
+    .score-circle svg {
+      transform: rotate(-90deg);
+      filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.3));
+    }
+    .score-circle-bg {
+      fill: none;
+      stroke: var(--border-subtle);
+      stroke-width: 10;
+    }
+    .score-circle-progress {
+      fill: none;
+      stroke-width: 10;
+      stroke-linecap: round;
+      transition: stroke-dashoffset 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .score-circle-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: var(--text-2xl);
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+    .match-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: var(--space-lg);
+      text-align: center;
+    }
+
+    .pending-banner {
+      margin-bottom: var(--space-lg);
+      padding: var(--space-md) var(--space-lg);
+      background: var(--accent-warning-muted);
+      border: 1px solid var(--accent-warning);
+      border-radius: var(--radius-lg);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: var(--space-md);
+    }
+    .pending-banner-text {
+      color: var(--accent-warning);
+      font-weight: 500;
+    }
+
+    /* ========================================
+       PROCESSING ANIMATIONS
+       ======================================== */
+    @keyframes pulse-subtle {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.6; }
+    }
+    .status-badge.status-processing,
+    .status-badge.status-scraping,
+    .status-badge.status-matching {
+      animation: pulse-subtle 1.2s ease-in-out infinite;
+    }
+    .status-badge.status-scraping {
+      background: rgba(139, 92, 246, 0.2);
+      color: #c4b5fd;
+      border-color: rgba(139, 92, 246, 0.4);
+    }
+    .status-badge.status-matching {
+      background: rgba(245, 158, 11, 0.2);
+      color: #fcd34d;
+      border-color: rgba(245, 158, 11, 0.4);
+    }
+
+    /* ========================================
+       PAGE HEADER
+       ======================================== */
+    .page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: var(--space-md);
+      margin-bottom: var(--space-lg);
+    }
+    .page-header h2 {
+      margin: 0;
+      font-size: var(--text-xl);
+      font-weight: 600;
+    }
+    .llm-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-xs);
+      padding: var(--space-xs) var(--space-sm);
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-full);
+      font-size: 0.7rem;
+      font-weight: 500;
+      color: var(--text-muted);
+    }
+    .llm-badge .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent-success);
+    }
+    .llm-badge.openai .dot { background: var(--accent-success); }
+    .llm-badge.ollama .dot { background: var(--accent-purple); }
+
+    /* ========================================
+       PAGINATION
+       ======================================== */
+    .pagination-container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: var(--space-md);
+      padding: var(--space-md);
+      background: var(--bg-card);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border-subtle);
+      margin-top: var(--space-lg);
+    }
+    
+    .pagination-info {
+      font-size: var(--text-sm);
+      color: var(--text-secondary);
+    }
+    
+    .pagination-info strong {
+      color: var(--text-primary);
+      font-weight: 600;
+    }
+    
+    .pagination-controls {
+      display: flex;
+      align-items: center;
+      gap: var(--space-xs);
+    }
+    
+    .pagination-pages {
+      display: flex;
+      align-items: center;
+      gap: var(--space-xs);
+    }
+    
+    .pagination-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 36px;
+      height: 36px;
+      padding: 0 var(--space-sm);
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      color: var(--text-secondary);
+      font-size: var(--text-sm);
+      font-weight: 500;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+    
+    .pagination-btn:hover:not(:disabled) {
+      background: var(--bg-hover);
+      border-color: var(--accent-primary);
+      color: var(--accent-primary);
+    }
+    
+    .pagination-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+    
+    .pagination-btn.active {
+      background: var(--accent-primary);
+      border-color: var(--accent-primary);
+      color: white;
+    }
+    
+    .pagination-ellipsis {
+      padding: 0 var(--space-xs);
+      color: var(--text-muted);
+      font-size: var(--text-sm);
+    }
+    
+    .pagination-per-page {
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+      font-size: var(--text-sm);
+      color: var(--text-secondary);
+    }
+    
+    .pagination-per-page select {
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: var(--space-xs) var(--space-sm);
+      font-family: var(--font-sans);
+      font-size: var(--text-sm);
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+    
+    .pagination-per-page select:focus {
+      outline: none;
+      border-color: var(--accent-primary);
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+    }
+    
+    .table-loading {
+      position: relative;
+    }
+    
+    .table-loading::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: var(--radius-lg);
+      pointer-events: none;
+    }
+    .jobs-table-container table tbody tr {
+      transition: background var(--transition-fast);
+    }
+    .jobs-table-container table tbody tr:hover {
+      background: var(--bg-hover);
+    }
+    #jobs-empty-filtered {
+      margin-top: var(--space-lg);
+    }
+    
+    @media (max-width: 768px) {
+      .pagination-container {
+        flex-direction: column;
+        align-items: stretch;
+        text-align: center;
+      }
+      
+      .pagination-controls {
+        justify-content: center;
+      }
+      
+      .pagination-per-page {
+        justify-content: center;
+      }
+      
+      .pagination-pages {
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+    }
+
+    /* ========================================
+       SUMMARY STATS
+       ======================================== */
+    .summary-stats {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-md);
+      padding: var(--space-md);
+      background: var(--bg-card);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border-subtle);
+      margin-top: var(--space-xl);
+    }
+    .stat-item {
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+      font-size: var(--text-sm);
+      color: var(--text-secondary);
+    }
+    .stat-item strong {
+      color: var(--text-primary);
+      font-weight: 600;
+    }
+
+    /* ========================================
+       EMPTY STATE
+       ======================================== */
+    .empty-state {
+      text-align: center;
+      padding: var(--space-2xl);
+      color: var(--text-muted);
+    }
+    .empty-state-icon {
+      font-size: 3rem;
+      margin-bottom: var(--space-md);
+      opacity: 0.5;
+    }
+
+    /* ========================================
+       MOBILE RESPONSIVE
+       ======================================== */
+    @media (max-width: 768px) {
+      .filter-bar {
+        flex-direction: column;
+      }
+      .filter-bar input[type="text"],
+      .filter-bar select {
+        width: 100%;
+        min-width: 0;
+      }
+      .bulk-actions {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .bulk-btn {
+        width: 100%;
+        justify-content: center;
+      }
+      .page-header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .modal-content {
+        max-height: 95vh;
+        border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+        margin-top: auto;
+      }
+      .modal-header {
+        border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+      }
+      table {
+        font-size: var(--text-xs);
+      }
+      th, td {
+        padding: var(--space-sm);
+      }
+      .company-logo,
+      .company-logo-placeholder {
+        width: 28px;
+        height: 28px;
+      }
+    }
+    
+    @media (max-width: 480px) {
+      .pending-banner {
+        flex-direction: column;
+        text-align: center;
+      }
+      .pending-banner button {
+        width: 100%;
+      }
+    }
+  </style>
+
+  <section class="card animate-slide-up">
+    <div class="page-header">
+      <h2>Job List</h2>
+      <div class="llm-badge {% if 'OpenAI' in llm_provider %}openai{% else %}ollama{% endif %}" title="LLM provider for job matching">
+        <span class="dot"></span>
+        {{ llm_provider }}
+      </div>
+    </div>
+    <p class="muted" style="margin-bottom: var(--space-lg);">
+      Pipeline: <span class="status-badge status-pending-scrape">Pending Scrape</span>
+      <span style="color: var(--text-muted);">→</span>
+      <span class="status-badge status-pending-match">Pending Match</span>
+      <span style="color: var(--text-muted);">→</span>
+      <span class="status-badge status-matched">Matched</span>
+    </p>
+    
+    <!-- Batch search progress (unified component) -->
+    {% with id="job-progress-batch-search", bar_id="job-progress-batch-search-bar", title="Batch Search", count_text="0 / 0 searches", detail_id="job-progress-batch-search-current", detail_extra_id="job-progress-batch-search-jobs", variant="purple", stop_onclick="stopBatchSearch()" %}
+      {% include "partials/job_progress.html" %}
+    {% endwith %}
+
+    <!-- Scrape/Match progress (unified component) -->
+    {% with id="job-progress-scrape-match", bar_id="job-progress-scrape-match-bar", title="Processing...", count_text="0 / 0", detail_id="job-progress-scrape-match-detail", stop_onclick="stopProcessing()" %}
+      {% include "partials/job_progress.html" %}
+    {% endwith %}
+
+    <!-- Pending jobs banner -->
+    {% set total_pending = (pending_scrape or 0) + (pending_match or 0) %}
+    {% if total_pending > 0 %}
+      <div id="pending-banner" class="pending-banner">
+        <span class="pending-banner-text">
+          {% if pending_scrape %}
+            <strong>{{ pending_scrape }}</strong> pending scrape
+          {% endif %}
+          {% if pending_scrape and pending_match %} · {% endif %}
+          {% if pending_match %}
+            <strong>{{ pending_match }}</strong> pending match
+          {% endif %}
+        </span>
+        <form action="/match-pending" method="post" style="margin: 0;">
+          <button type="submit" id="process-btn" class="btn">
+            Process All Pending
+          </button>
+        </form>
+      </div>
+    {% endif %}
+
+    <!-- Bulk actions bar -->
+    <div id="bulk-actions" class="bulk-actions">
+      <span class="bulk-actions-count"><span id="selected-count">0</span> selected</span>
+      <button class="bulk-btn bulk-btn-rescrape" onclick="bulkRescrape()">Re-scrape</button>
+      <button class="bulk-btn bulk-btn-rematch" onclick="bulkRematch()">Re-match</button>
+      <button class="bulk-btn bulk-btn-logos" onclick="bulkRescrapeLogos()" style="background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%);">Re-scrape Logos</button>
+      <button class="bulk-btn bulk-btn-delete" onclick="bulkDelete()">Delete</button>
+      <button class="bulk-btn bulk-btn-clear" onclick="clearSelection()">Clear</button>
+    </div>
+
+    <!-- Logo rescrape progress (unified component, no bar) -->
+    {% with id="job-progress-logo-rescrape", bar_id="job-progress-logo-rescrape-bar", title="Rescraping logos...", show_bar=none, detail_id="job-progress-logo-rescrape-detail", variant="purple", stop_onclick="stopLogoRescrape()" %}
+      {% include "partials/job_progress.html" %}
+    {% endwith %}
+    
+    <!-- Search (always visible) -->
+    <div class="search-row">
+      <input type="text" id="search-input" placeholder="Search by title, company, location (e.g. Full Stack, UX)…" onkeyup="filterJobs()" aria-label="Search jobs">
+    </div>
+    
+    <!-- Search and filter bar (collapsible) -->
+    <div class="filters-collapsible">
+      <details class="filters-details" id="filters-details">
+        <summary class="filters-summary">
+          <span class="filters-summary-text">Filters</span>
+          <svg class="filters-summary-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M6 9l6 6 6-6"/>
+          </svg>
+        </summary>
+        <div class="filter-bar">
+          <select id="status-filter" onchange="filterJobs()" aria-label="Filter by status">
+            <option value="">All Statuses</option>
+            <option value="pending_scrape">Pending Scrape</option>
+            <option value="pending_match">Pending Match</option>
+            <option value="matched">Matched</option>
+            <option value="applied">Applied</option>
+            <option value="discovered">Discovered (Legacy)</option>
+          </select>
+          <select id="recommendation-filter" onchange="filterJobs()" aria-label="Filter by recommendation">
+            <option value="">All Recommendations</option>
+            <option value="apply">Apply (70+)</option>
+            <option value="consider">Consider (50-69)</option>
+            <option value="skip">Skip (&lt;50)</option>
+          </select>
+          <select id="source-filter" onchange="filterJobs()" aria-label="Filter by source">
+            <option value="">All Sources</option>
+            <option value="linkedin">LinkedIn</option>
+            <option value="greenhouse">Greenhouse</option>
+            <option value="lever">Lever</option>
+            <option value="workday">Workday</option>
+          </select>
+          <label class="hide-applied-toggle" title="Hide jobs you've already applied to">
+            <input type="checkbox" id="hide-applied-checkbox" onchange="filterJobs()" aria-label="Hide applied jobs">
+            <span class="toggle-slider"></span>
+            <span class="toggle-label">Hide Applied</span>
+          </label>
+        </div>
+      </details>
+    </div>
+
+    {% if jobs %}
+      <div class="jobs-table-container" style="overflow-x: auto;">
+        <table id="jobs-table">
+          <thead>
+            <tr>
+              <th style="width: 40px;">
+                <input type="checkbox" class="job-checkbox" id="select-all" onclick="toggleSelectAll()">
+              </th>
+              <th class="sortable" data-sort="company" data-column="company">
+                <span class="th-inner"><span class="th-label" onclick="sortTable('company')">Company</span>
+                <button type="button" class="col-filter-btn" data-column="company" aria-label="Filter by company" title="Filter by company" onclick="event.stopPropagation(); openColumnFilter('company', this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h12M4 18h8"/><circle cx="18" cy="6" r="2.5" fill="currentColor"/></svg></button></span>
+              </th>
+              <th class="sortable" data-sort="title" data-column="title">
+                <span class="th-inner"><span class="th-label" onclick="sortTable('title')">Role / Title</span>
+                <button type="button" class="col-filter-btn" data-column="title" aria-label="Filter by role or title" title="Filter by role or title" onclick="event.stopPropagation(); openColumnFilter('title', this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h12M4 18h8"/><circle cx="18" cy="6" r="2.5" fill="currentColor"/></svg></button></span>
+              </th>
+              <th class="sortable" data-sort="location" data-column="location">
+                <span class="th-inner"><span class="th-label" onclick="sortTable('location')">Location</span>
+                <button type="button" class="col-filter-btn" data-column="location" aria-label="Filter by location" title="Filter by location" onclick="event.stopPropagation(); openColumnFilter('location', this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h12M4 18h8"/><circle cx="18" cy="6" r="2.5" fill="currentColor"/></svg></button></span>
+              </th>
+              <th class="sortable" data-sort="posted" onclick="sortTable('posted')">Posted</th>
+              <th class="sortable" data-sort="added" onclick="sortTable('added')">Added</th>
+              <th class="sortable" data-sort="status" data-column="status">
+                <span class="th-inner"><span class="th-label" onclick="sortTable('status')">Status</span>
+                <button type="button" class="col-filter-btn" data-column="status" aria-label="Filter by status" title="Filter by status" onclick="event.stopPropagation(); openColumnFilter('status', this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h12M4 18h8"/><circle cx="18" cy="6" r="2.5" fill="currentColor"/></svg></button></span>
+              </th>
+              <th class="sortable" data-sort="score" onclick="sortTable('score')">Score</th>
+              <th class="sortable" data-sort="recommendation" data-column="recommendation">
+                <span class="th-inner"><span class="th-label" onclick="sortTable('recommendation')">Recommendation</span>
+                <button type="button" class="col-filter-btn" data-column="recommendation" aria-label="Filter by recommendation" title="Filter by recommendation" onclick="event.stopPropagation(); openColumnFilter('recommendation', this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h12M4 18h8"/><circle cx="18" cy="6" r="2.5" fill="currentColor"/></svg></button></span>
+              </th>
+            </tr>
+          </thead>
+          <tbody id="jobs-tbody">
+            {% for job in jobs %}
+              {% set match = match_results.get(job.id) if match_results else None %}
+              <tr class="job-row" 
+                  data-job-id="{{ job.id }}"
+                  data-title="{{ job.title | lower }}"
+                  data-company="{{ job.company | lower }}"
+                  data-location="{{ job.location | lower }}"
+                  data-posted="{{ job.date_posted.isoformat() if job.date_posted else '' }}"
+                  data-added="{{ job.date_found.isoformat() if job.date_found else '' }}"
+                  data-status="{{ job.status.value }}"
+                  data-score="{{ match.match_score if match else -1 }}"
+                  data-recommendation="{{ 'apply' if match and match.match_score >= 70 else ('consider' if match and match.match_score >= 50 else ('skip' if match else '')) }}">
+                <td onclick="event.stopPropagation();">
+                  <input type="checkbox" class="job-checkbox row-checkbox" data-id="{{ job.id }}" onclick="updateSelection()">
+                </td>
+                <td onclick="openJobModal({{ job.id }})">
+                  <div class="company-cell">
+                    {% if job.company_logo_url %}
+                      {% if job.company_logo_url.startswith('/static/') %}
+                        <img class="company-logo" src="{{ job.company_logo_url }}" alt="" onerror="this.outerHTML='<div class=\'company-logo-placeholder\'>{{ job.company[0] | upper }}</div>'">
+                      {% else %}
+                        <img class="company-logo" src="/api/proxy-image?url={{ job.company_logo_url | urlencode }}" alt="" onerror="this.outerHTML='<div class=\'company-logo-placeholder\'>{{ job.company[0] | upper }}</div>'">
+                      {% endif %}
+                    {% else %}
+                      <div class="company-logo-placeholder">{{ job.company[0] | upper }}</div>
+                    {% endif %}
+                    {{ job.company }}
+                  </div>
+                </td>
+                <td onclick="openJobModal({{ job.id }})">{{ job.title }}</td>
+                <td onclick="openJobModal({{ job.id }})">{{ job.location }}</td>
+                <td onclick="openJobModal({{ job.id }})" class="date-cell">
+                  {% if job.date_posted %}
+                    <span class="date-text" title="{{ job.date_posted.strftime('%Y-%m-%d %H:%M') }}">
+                      {{ job.date_posted.strftime('%b %d') }}
+                    </span>
+                  {% else %}
+                    <span class="muted">--</span>
+                  {% endif %}
+                </td>
+                <td onclick="openJobModal({{ job.id }})" class="date-cell">
+                  <span class="date-text" title="{{ job.date_found.strftime('%Y-%m-%d %H:%M') }}">
+                    {{ job.date_found.strftime('%b %d') }}
+                  </span>
+                </td>
+                <td onclick="openJobModal({{ job.id }})">
+                  {% if job.status.value == 'pending_scrape' %}
+                    <span class="status-badge status-pending-scrape">Pending Scrape</span>
+                  {% elif job.status.value == 'pending_match' %}
+                    <span class="status-badge status-pending-match">Pending Match</span>
+                  {% elif job.status.value == 'matched' %}
+                    <span class="status-badge status-matched">Matched</span>
+                  {% elif job.status.value == 'applied' %}
+                    <span class="status-badge status-applied">Applied</span>
+                  {% else %}
+                    <span class="status-badge status-discovered">{{ job.status.value }}</span>
+                  {% endif %}
+                </td>
+                <td onclick="openJobModal({{ job.id }})">
+                  {% if match %}
+                    <span class="match-score">{{ match.match_score }}%</span>
+                  {% else %}
+                    <span class="muted">--</span>
+                  {% endif %}
+                </td>
+                <td onclick="openJobModal({{ job.id }})">
+                  {% if match %}
+                    {% if match.match_score >= 70 %}
+                      <span class="score-badge score-apply">Apply</span>
+                    {% elif match.match_score >= 50 %}
+                      <span class="score-badge score-consider">Consider</span>
+                    {% else %}
+                      <span class="score-badge score-skip">Skip</span>
+                    {% endif %}
+                  {% else %}
+                    <span class="muted">--</span>
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      
+      <!-- Column filter dropdown (single panel, reused for all columns) -->
+      <div id="col-filter-dropdown" class="col-filter-dropdown" role="dialog" aria-label="Column filter">
+        <div class="filter-panel-header" id="col-filter-title">Filter</div>
+        <div class="filter-search" id="col-filter-search-wrap" style="display: none;">
+          <input type="text" id="col-filter-search" placeholder="Search..." aria-label="Search options">
+        </div>
+        <div class="filter-select-all" id="col-filter-select-all" style="display: none;">Select all</div>
+        <div class="filter-list" id="col-filter-list"></div>
+        <div class="filter-actions">
+          <button type="button" class="btn-clear" id="col-filter-clear-btn">Clear filter</button>
+          <button type="button" class="btn-apply" id="col-filter-apply-btn">Apply</button>
+        </div>
+      </div>
+      
+      <!-- Pagination Controls -->
+      <div id="pagination-container" class="pagination-container">
+        <div class="pagination-info">
+          <span id="pagination-showing">
+            Showing <strong id="pagination-start">{{ ((pagination.page - 1) * pagination.per_page) + 1 }}</strong>-<strong id="pagination-end">{{ [pagination.page * pagination.per_page, pagination.total_items] | min }}</strong> of <strong id="pagination-total">{{ pagination.total_items }}</strong> jobs
+          </span>
+        </div>
+        
+        <div class="pagination-controls">
+          <button id="pagination-first" class="pagination-btn" onclick="goToPage(1)" {% if not pagination.has_prev %}disabled{% endif %} title="First page">
+            <span>&#171;</span>
+          </button>
+          <button id="pagination-prev" class="pagination-btn" onclick="goToPage({{ pagination.page - 1 }})" {% if not pagination.has_prev %}disabled{% endif %} title="Previous page">
+            <span>&#8249;</span>
+          </button>
+          
+          <div id="pagination-pages" class="pagination-pages">
+            {% for p in range(1, pagination.total_pages + 1) %}
+              {% if p == pagination.page %}
+                <button class="pagination-btn active">{{ p }}</button>
+              {% elif p == 1 or p == pagination.total_pages or (p >= pagination.page - 2 and p <= pagination.page + 2) %}
+                <button class="pagination-btn" onclick="goToPage({{ p }})">{{ p }}</button>
+              {% elif p == pagination.page - 3 or p == pagination.page + 3 %}
+                <span class="pagination-ellipsis">...</span>
+              {% endif %}
+            {% endfor %}
+          </div>
+          
+          <button id="pagination-next" class="pagination-btn" onclick="goToPage({{ pagination.page + 1 }})" {% if not pagination.has_next %}disabled{% endif %} title="Next page">
+            <span>&#8250;</span>
+          </button>
+          <button id="pagination-last" class="pagination-btn" onclick="goToPage({{ pagination.total_pages }})" {% if not pagination.has_next %}disabled{% endif %} title="Last page">
+            <span>&#187;</span>
+          </button>
+        </div>
+        
+        <div class="pagination-per-page">
+          <label for="per-page-select">Per page:</label>
+          <select id="per-page-select" onchange="changePerPage(this.value)">
+            <option value="10" {% if pagination.per_page == 10 %}selected{% endif %}>10</option>
+            <option value="25" {% if pagination.per_page == 25 %}selected{% endif %}>25</option>
+            <option value="50" {% if pagination.per_page == 50 %}selected{% endif %}>50</option>
+            <option value="100" {% if pagination.per_page == 100 %}selected{% endif %}>100</option>
+          </select>
+        </div>
+      </div>
+      
+      <div class="summary-stats">
+        <div class="stat-item">
+          <strong id="stats-total">{{ pagination.total_items }}</strong> Total jobs
+        </div>
+        <div class="stat-item">
+          <span class="status-badge status-pending-scrape" id="stats-pending-scrape">{{ pending_scrape or 0 }}</span> pending scrape
+        </div>
+        <div class="stat-item">
+          <span class="status-badge status-pending-match" id="stats-pending-match">{{ pending_match or 0 }}</span> pending match
+        </div>
+        <div class="stat-item">
+          <span class="status-badge status-matched" id="stats-matched">{{ matched_count or 0 }}</span> matched
+        </div>
+      </div>
+      
+      <div id="jobs-empty-filtered" class="empty-state" style="display: none;">
+        <div class="empty-state-icon">📋</div>
+        <p>No jobs match your current filters.</p>
+        <p style="margin-top: var(--space-sm);">Try adjusting filters or <a href="#" onclick="clearAllColumnFilters(); return false;">clear column filters</a>.</p>
+      </div>
+    {% else %}
+      <div class="empty-state">
+        <div class="empty-state-icon">📋</div>
+        <p>No jobs found yet.</p>
+        <p style="margin-top: var(--space-sm);">Go back to the <a href="/">home page</a> and run a search to get started.</p>
+      </div>
+    {% endif %}
+  </section>
+
+  <!-- Job Detail Modal with Tabs -->
+  <div id="job-modal" class="modal-overlay" onclick="if(event.target === this) closeModal()">
+    <div class="modal-content modal-tabbed">
+      <div class="modal-header">
+        <img id="modal-logo" src="" alt="Company logo" onerror="this.style.display='none'">
+        <div class="modal-header-text">
+          <h2 id="modal-title">Job Title</h2>
+          <p id="modal-company-location">Company - Location</p>
+        </div>
+        <button class="modal-close" onclick="closeModal()">&times;</button>
+      </div>
+      
+      <!-- Tab Navigation -->
+      <div class="modal-tabs">
+        <button class="modal-tab active" data-tab="overview" onclick="switchTab('overview')">
+          <span class="tab-icon">📋</span>
+          <span>Overview</span>
+        </button>
+        <button class="modal-tab" data-tab="description" onclick="switchTab('description')">
+          <span class="tab-icon">📝</span>
+          <span>Description</span>
+        </button>
+        <button class="modal-tab" data-tab="match" onclick="switchTab('match')">
+          <span class="tab-icon">🎯</span>
+          <span>Match Analysis</span>
+        </button>
+        <button class="modal-tab" data-tab="company" onclick="switchTab('company')">
+          <span class="tab-icon">🏢</span>
+          <span>Company</span>
+        </button>
+        <div class="tab-indicator"></div>
+      </div>
+      
+      <div class="modal-body">
+        <!-- Tab 1: Overview -->
+        <div id="tab-overview" class="tab-panel active">
+          <div class="overview-hero">
+            <div class="overview-logo-large">
+              <img id="overview-logo" src="" alt="Company logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+              <div class="company-logo-placeholder-large" style="display:none;"></div>
+            </div>
+            <div class="overview-info">
+              <h3 id="overview-title" class="overview-job-title">Job Title</h3>
+              <p id="overview-company" class="overview-company-name">Company Name</p>
+              <p id="overview-location" class="overview-location">Location</p>
+            </div>
+          </div>
+          
+          <div id="overview-score-section" class="overview-score" style="display:none;">
+            <div class="score-circle">
+              <svg width="100" height="100" viewBox="0 0 100 100">
+                <circle class="score-circle-bg" cx="50" cy="50" r="42"></circle>
+                <circle id="score-progress" class="score-circle-progress" cx="50" cy="50" r="42" 
+                        stroke-dasharray="264" stroke-dashoffset="264"></circle>
+              </svg>
+              <div id="score-value" class="score-circle-text">0%</div>
+            </div>
+            <div class="score-details">
+              <div id="modal-recommendation" class="score-badge"></div>
+              <p class="score-hint">Based on your profile match</p>
+            </div>
+          </div>
+          
+          <div class="overview-meta">
+            <div class="meta-item">
+              <span class="meta-label">Posted</span>
+              <span id="overview-date-posted" class="meta-value">--</span>
+            </div>
+            <div class="meta-item">
+              <span class="meta-label">Added</span>
+              <span id="overview-date-added" class="meta-value">--</span>
+            </div>
+            <div class="meta-item">
+              <span class="meta-label">Easy Apply</span>
+              <span id="overview-easy-apply" class="meta-value">--</span>
+            </div>
+          </div>
+          
+          <div class="overview-actions">
+            <a id="modal-link" href="#" onclick="openLinkedInJob(event)" class="btn btn-primary">
+              Open on LinkedIn →
+            </a>
+            <a id="btn-apply-assistant" href="#" onclick="applyWithAssistant(event)" class="btn btn-apply-assistant" style="display: none;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 2v20M2 12h20"></path>
+              </svg>
+              Apply with Assistant
+            </a>
+          </div>
+        </div>
+        
+        <!-- Tab 2: Job Description -->
+        <div id="tab-description" class="tab-panel">
+          <div class="description-section">
+            <div id="modal-description" class="description-text">Loading...</div>
+          </div>
+        </div>
+        
+        <!-- Tab 3: Match Analysis -->
+        <div id="tab-match" class="tab-panel">
+          <div id="match-no-data" class="match-empty" style="display:none;">
+            <div class="empty-icon">🎯</div>
+            <p>No match analysis available yet.</p>
+            <p class="hint">Run the matching process to see how this job aligns with your profile.</p>
+          </div>
+          
+          <div id="match-content" style="display:none;">
+            <div id="modal-reasons" class="modal-section" style="display:none;">
+              <h3>✅ Why It Matches</h3>
+              <ul id="modal-reasons-list"></ul>
+            </div>
+            
+            <div id="modal-inferred" class="modal-section inferred-section" style="display:none;">
+              <h3>💡 Inferred Qualifications</h3>
+              <p class="inferred-hint">Requirements satisfied by inference from your experience:</p>
+              <ul id="modal-inferred-list"></ul>
+            </div>
+            
+            <div id="modal-missing" class="modal-section missing-section" style="display:none;">
+              <h3>⚠️ Missing Requirements</h3>
+              <ul id="modal-missing-list"></ul>
+            </div>
+            
+            <div id="modal-suggestions" class="modal-section suggestions-section" style="display:none;">
+              <h3>💡 Resume Suggestions</h3>
+              <ul id="modal-suggestions-list"></ul>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Tab 4: Company Info -->
+        <div id="tab-company" class="tab-panel">
+          <div class="company-hero">
+            <div class="company-logo-hero">
+              <img id="company-logo-large" src="" alt="Company logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+              <div class="company-logo-placeholder-hero" style="display:none;"></div>
+            </div>
+            <h3 id="company-name-display" class="company-name-hero">Company Name</h3>
+            <p id="company-location-display" class="company-location-hero">Location</p>
+            <a id="company-linkedin-link" href="#" target="_blank" rel="noopener noreferrer" class="btn btn-outline">
+              View on LinkedIn
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Applied Confirmation Dialog -->
+  <div id="applied-dialog" class="modal-overlay" style="display:none;">
+    <div class="applied-dialog-content">
+      <h3>Did you apply?</h3>
+      <p>Did you submit an application for this job on LinkedIn?</p>
+      <div class="dialog-actions">
+        <button onclick="confirmApplied(true)" class="btn btn-success">Yes, I Applied</button>
+        <button onclick="confirmApplied(false)" class="btn btn-secondary">Not Yet</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let pollInterval = null;
+    let selectedJobs = new Set();
+    let currentSort = { column: '{{ filters.sort_by }}', direction: '{{ filters.sort_dir }}' };
+    let lastCompletedCount = 0;
+    let currentModalJobId = null;
+    let pendingAppliedJobId = null;
+    let isRefreshing = false;
+    let searchDebounceTimer = null;
+    
+    // Pagination state
+    let paginationState = {
+      page: {{ pagination.page }},
+      perPage: {{ pagination.per_page }},
+      totalItems: {{ pagination.total_items }},
+      totalPages: {{ pagination.total_pages }},
+      status: '{{ filters.status }}',
+      search: '{{ filters.search }}',
+      recommendation: '{{ filters.recommendation }}',
+      hideApplied: {{ 'true' if filters.hide_applied else 'false' }},
+      sortBy: '{{ filters.sort_by }}',
+      sortDir: '{{ filters.sort_dir }}',
+      source: '{{ filters.source | default("") }}',
+      companyList: [],
+      titleList: [],
+      locationList: [],
+      statusList: [],
+      recommendationList: []
+    };
+    
+    // Helper to get the proper image URL for a company logo
+    function getLogoUrl(logoUrl) {
+      if (!logoUrl) return '';
+      // Local paths start with /static/
+      if (logoUrl.startsWith('/static/')) {
+        return logoUrl;
+      }
+      // LinkedIn URLs need to be proxied
+      return '/api/proxy-image?url=' + encodeURIComponent(logoUrl);
+    }
+    
+    // Progress polling (unified job progress component)
+    async function checkProgress() {
+      try {
+        const resp = await fetch('/api/progress');
+        const status = await resp.json();
+        
+        const pendingBanner = document.getElementById('pending-banner');
+        const activeJobIds = status.active_jobs || [];
+        const detailLabel = activeJobIds.length > 1
+          ? `Processing ${activeJobIds.length} jobs in parallel...`
+          : (status.current_job || '');
+        
+        if (typeof window.updateJobProgress === 'function') {
+          window.updateJobProgress('job-progress-scrape-match', {
+            running: !!status.running,
+            phase: status.phase === 'scraping' ? 'Scraping descriptions...' : 'Matching with LLM...',
+            total: status.total,
+            completed: status.completed,
+            detailLabel: detailLabel,
+          });
+        }
+        
+        if (status.running) {
+          if (pendingBanner) pendingBanner.style.display = 'none';
+          // Clear previous processing states
+          document.querySelectorAll('.job-row.processing').forEach(row => {
+            row.classList.remove('processing');
+          });
+          document.querySelectorAll('.status-badge.status-scraping, .status-badge.status-matching').forEach(badge => {
+            const row = badge.closest('tr');
+            if (row) {
+              const originalStatus = row.dataset.status;
+              badge.outerHTML = getStatusBadge(originalStatus);
+            }
+          });
+          // Handle active jobs for parallel matching
+          const isScraping = status.phase === 'scraping';
+          const badgeLabel = isScraping ? 'Scraping...' : 'Matching...';
+          const phaseClass = isScraping ? 'status-scraping' : 'status-matching';
+          activeJobIds.forEach((jobId) => {
+            const row = document.querySelector(`tr[data-job-id="${jobId}"]`);
+            if (row) {
+              row.classList.add('processing');
+              const statusCell = row.querySelectorAll('td')[4];
+              if (statusCell) {
+                statusCell.innerHTML = `<span class="status-badge ${phaseClass}">${badgeLabel}</span>`;
+              }
+            }
+          });
+          if (status.completed > lastCompletedCount) {
+            lastCompletedCount = status.completed;
+            await refreshJobsTable();
+          }
+          if (!pollInterval) {
+            pollInterval = setInterval(checkProgress, 2000);
+          }
+        } else {
+          if (pendingBanner) pendingBanner.style.display = 'flex';
+          document.querySelectorAll('.job-row.processing').forEach(row => {
+            row.classList.remove('processing');
+          });
+          document.querySelectorAll('.status-badge.status-scraping, .status-badge.status-matching').forEach(badge => {
+            const row = badge.closest('tr');
+            if (row) {
+              const originalStatus = row.dataset.status;
+              badge.outerHTML = getStatusBadge(originalStatus);
+            }
+          });
+          if (pollInterval) {
+            clearInterval(pollInterval);
+            pollInterval = null;
+            lastCompletedCount = 0;
+            await refreshJobsTable();
+          }
+        }
+      } catch (e) {
+        console.error('Error checking progress:', e);
+      }
+    }
+    
+    async function stopProcessing() {
+      try {
+        await fetch('/api/stop-matching', { method: 'POST' });
+        setTimeout(() => location.reload(), 500);
+      } catch (e) {
+        console.error('Error stopping:', e);
+      }
+    }
+    
+    // Batch search polling
+    let batchSearchInterval = null;
+    
+    async function checkBatchSearch() {
+      try {
+        const resp = await fetch('/api/batch-search-status');
+        const status = await resp.json();
+        
+        if (status.running && typeof window.updateJobProgress === 'function') {
+          window.updateJobProgress('job-progress-batch-search', {
+            running: true,
+            phase: 'Batch Search',
+            total: status.total_searches,
+            completed: status.completed_searches,
+            countLabel: status.completed_searches + ' / ' + status.total_searches + ' searches',
+            detailLabel: status.current_search ? 'Searching: ' + status.current_search : '',
+          });
+          const jobsEl = document.getElementById('job-progress-batch-search-jobs');
+          if (jobsEl) {
+            const dupeText = status.total_duplicates > 0 ? ` (${status.total_duplicates} duplicates)` : '';
+            jobsEl.textContent = status.total_jobs_found + ' new jobs found' + dupeText;
+          }
+          if (!batchSearchInterval) {
+            batchSearchInterval = setInterval(checkBatchSearch, 2000);
+          }
+        } else {
+          if (typeof window.updateJobProgress === 'function') {
+            window.updateJobProgress('job-progress-batch-search', { running: false });
+          }
+          if (batchSearchInterval) {
+            clearInterval(batchSearchInterval);
+            batchSearchInterval = null;
+            await refreshJobsTable();
+          }
+        }
+      } catch (e) {
+        console.error('Error checking batch search:', e);
+      }
+    }
+    
+    async function stopBatchSearch() {
+      try {
+        await fetch('/api/stop-batch-search', { method: 'POST' });
+        setTimeout(() => location.reload(), 500);
+      } catch (e) {
+        console.error('Error stopping batch search:', e);
+      }
+    }
+    
+    // Selection functions
+    function updateSelection() {
+      selectedJobs.clear();
+      document.querySelectorAll('.row-checkbox:checked').forEach(cb => {
+        selectedJobs.add(parseInt(cb.dataset.id));
+      });
+      
+      const count = selectedJobs.size;
+      document.getElementById('selected-count').textContent = count;
+      document.getElementById('bulk-actions').classList.toggle('visible', count > 0);
+      
+      // Update select-all checkbox state
+      const allCheckboxes = document.querySelectorAll('.row-checkbox');
+      const checkedCount = document.querySelectorAll('.row-checkbox:checked').length;
+      const selectAll = document.getElementById('select-all');
+      selectAll.checked = checkedCount > 0 && checkedCount === allCheckboxes.length;
+      selectAll.indeterminate = checkedCount > 0 && checkedCount < allCheckboxes.length;
+      
+      // Update row styling
+      document.querySelectorAll('.job-row').forEach(row => {
+        const id = parseInt(row.dataset.jobId);
+        row.classList.toggle('selected', selectedJobs.has(id));
+      });
+    }
+    
+    function toggleSelectAll() {
+      const selectAll = document.getElementById('select-all');
+      document.querySelectorAll('.row-checkbox').forEach(cb => {
+        const row = cb.closest('tr');
+        if (row.style.display !== 'none') {
+          cb.checked = selectAll.checked;
+        }
+      });
+      updateSelection();
+    }
+    
+    function clearSelection() {
+      document.querySelectorAll('.row-checkbox').forEach(cb => cb.checked = false);
+      document.getElementById('select-all').checked = false;
+      updateSelection();
+    }
+    
+    // Bulk actions
+    async function bulkDelete() {
+      if (selectedJobs.size === 0) return;
+      if (!confirm(`Delete ${selectedJobs.size} job(s)?`)) return;
+      
+      try {
+        const resp = await fetch('/api/jobs/delete', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ job_ids: Array.from(selectedJobs) })
+        });
+        const data = await resp.json();
+        showNotification(`Deleted ${data.deleted} jobs`, 'success');
+        selectedJobs.clear();
+        await refreshJobsTable();
+      } catch (e) {
+        console.error('Error deleting:', e);
+        showNotification('Failed to delete jobs', 'error');
+      }
+    }
+    
+    async function bulkRescrape() {
+      if (selectedJobs.size === 0) return;
+      
+      try {
+        const resp = await fetch('/api/jobs/rescrape', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ job_ids: Array.from(selectedJobs) })
+        });
+        const data = await resp.json();
+        if (data.error) {
+          alert(data.error);
+        } else {
+          clearSelection();
+          checkProgress();
+        }
+      } catch (e) {
+        console.error('Error rescraping:', e);
+        alert('Failed to start re-scraping');
+      }
+    }
+    
+    async function bulkRematch() {
+      if (selectedJobs.size === 0) return;
+      
+      try {
+        const resp = await fetch('/api/jobs/rematch', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ job_ids: Array.from(selectedJobs) })
+        });
+        const data = await resp.json();
+        if (data.error) {
+          alert(data.error);
+        } else {
+          clearSelection();
+          checkProgress();
+        }
+      } catch (e) {
+        console.error('Error rematching:', e);
+        alert('Failed to start re-matching');
+      }
+    }
+    
+    // Logo rescraping functions
+    let logoRescrapePolling = null;
+    
+    async function bulkRescrapeLogos() {
+      if (selectedJobs.size === 0) return;
+      
+      try {
+        const resp = await fetch('/api/rescrape-logos', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ job_ids: Array.from(selectedJobs) })
+        });
+        const data = await resp.json();
+        
+        if (data.error) {
+          alert(data.error);
+        } else if (data.count === 0) {
+          alert('No jobs in selection are missing logos!');
+        } else {
+          clearSelection();
+          const el = document.getElementById('job-progress-logo-rescrape');
+          const detailEl = document.getElementById('job-progress-logo-rescrape-detail');
+          if (el) el.style.display = 'block';
+          if (detailEl) detailEl.textContent = `Downloading logos for ${data.count} jobs...`;
+          pollLogoRescrapeStatus();
+        }
+      } catch (e) {
+        console.error('Error starting logo rescrape:', e);
+        alert('Failed to start logo downloading');
+      }
+    }
+    
+    async function pollLogoRescrapeStatus() {
+      if (logoRescrapePolling) clearInterval(logoRescrapePolling);
+      
+      logoRescrapePolling = setInterval(async () => {
+        try {
+          const resp = await fetch('/api/rescrape-logos/status');
+          const data = await resp.json();
+          
+          const progressText = document.getElementById('job-progress-logo-rescrape-detail');
+          if (progressText) progressText.textContent = `(${data.processed}/${data.total} - ${data.found} found, ${data.failed} failed)`;
+          
+          if (!data.running) {
+            clearInterval(logoRescrapePolling);
+            const el = document.getElementById('job-progress-logo-rescrape');
+            if (el) el.style.display = 'none';
+            
+            if (data.total > 0) {
+              if (data.found > 0) {
+                alert(`Logo rescraping complete!\n${data.found} logos found, ${data.failed} failed.`);
+                location.reload();
+              } else if (data.failed > 0) {
+                alert(`Logo rescraping complete. No logos found (${data.failed} failed).`);
+              }
+            }
+          }
+        } catch (e) {
+          console.error('Error polling logo status:', e);
+        }
+      }, 2000);
+    }
+    
+    async function stopLogoRescrape() {
+      try {
+        await fetch('/api/rescrape-logos/stop', { method: 'POST' });
+      } catch (e) {
+        console.error('Error stopping logo rescrape:', e);
+      }
+    }
+    
+    // Check logo rescrape status on page load
+    async function checkLogoRescrapeStatus() {
+      try {
+        const resp = await fetch('/api/rescrape-logos/status');
+        const data = await resp.json();
+        if (data.running) {
+          const el = document.getElementById('job-progress-logo-rescrape');
+          if (el) el.style.display = 'block';
+          pollLogoRescrapeStatus();
+        }
+      } catch (e) {
+        console.error('Error checking logo status:', e);
+      }
+    }
+    
+    // Server-side filter function with debouncing
+    function filterJobs() {
+      if (searchDebounceTimer) {
+        clearTimeout(searchDebounceTimer);
+      }
+      
+      searchDebounceTimer = setTimeout(() => {
+        const searchText = document.getElementById('search-input').value;
+        const statusFilter = document.getElementById('status-filter').value;
+        const recFilter = document.getElementById('recommendation-filter').value;
+        const hideApplied = document.getElementById('hide-applied-checkbox').checked;
+        const sourceFilter = document.getElementById('source-filter').value;
+        
+        paginationState.search = searchText;
+        paginationState.status = statusFilter;
+        paginationState.recommendation = recFilter;
+        paginationState.hideApplied = hideApplied;
+        paginationState.source = sourceFilter;
+        paginationState.page = 1;
+        
+        updateFiltersSummaryText();
+        loadJobsPage();
+      }, 300);
+    }
+    
+    // Server-side sort function
+    function sortTable(column) {
+      if (currentSort.column === column) {
+        currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+      } else {
+        currentSort.column = column;
+        currentSort.direction = 'desc';
+      }
+      
+      document.querySelectorAll('th.sortable').forEach(th => {
+        th.classList.remove('sort-asc', 'sort-desc');
+        if (th.dataset.sort === column) {
+          th.classList.add(currentSort.direction === 'asc' ? 'sort-asc' : 'sort-desc');
+        }
+      });
+      
+      paginationState.sortBy = column;
+      paginationState.sortDir = currentSort.direction;
+      paginationState.page = 1;
+      
+      loadJobsPage();
+    }
+    
+    // Column filter dropdown
+    let currentColumnFilter = null;
+    const COLUMN_LABELS = { company: 'Company', title: 'Role / Title', location: 'Location', status: 'Status', recommendation: 'Recommendation' };
+    const RECOMMENDATION_VALUES = [
+      { value: 'apply', label: 'Apply (70+)' },
+      { value: 'consider', label: 'Consider (50–69)' },
+      { value: 'skip', label: 'Skip (&lt;50)' }
+    ];
+    
+    function openColumnFilter(column, buttonEl) {
+      const dropdown = document.getElementById('col-filter-dropdown');
+      const titleEl = document.getElementById('col-filter-title');
+      const listEl = document.getElementById('col-filter-list');
+      const searchWrap = document.getElementById('col-filter-search-wrap');
+      const selectAllEl = document.getElementById('col-filter-select-all');
+      const searchInput = document.getElementById('col-filter-search');
+      
+      if (currentColumnFilter === column && dropdown.classList.contains('open')) {
+        closeColumnFilter();
+        return;
+      }
+      currentColumnFilter = column;
+      titleEl.textContent = 'Filter by ' + (COLUMN_LABELS[column] || column);
+      document.querySelectorAll('.col-filter-btn').forEach(btn => btn.classList.remove('active'));
+      if (buttonEl) buttonEl.classList.add('active');
+      
+      const showSearch = column !== 'status' && column !== 'recommendation';
+      searchWrap.style.display = showSearch ? 'block' : 'none';
+      selectAllEl.style.display = showSearch ? 'block' : 'none';
+      searchInput.value = '';
+      
+      if (column === 'recommendation') {
+        renderFilterListRecommendation(listEl);
+      } else {
+        fetchFacetsAndRender(column, listEl);
+      }
+      
+      positionDropdown(dropdown, buttonEl || document.querySelector(`th[data-column="${column}"]`));
+      dropdown.classList.add('open');
+      if (showSearch) setTimeout(() => searchInput.focus(), 100);
+      
+      document.addEventListener('click', closeOnClickOutside);
+      document.addEventListener('keydown', closeOnEscape);
+    }
+    
+    function closeColumnFilter() {
+      const dropdown = document.getElementById('col-filter-dropdown');
+      dropdown.classList.remove('open');
+      currentColumnFilter = null;
+      document.querySelectorAll('.col-filter-btn').forEach(btn => btn.classList.remove('active'));
+      document.removeEventListener('click', closeOnClickOutside);
+      document.removeEventListener('keydown', closeOnEscape);
+    }
+    
+    function closeOnClickOutside(e) {
+      const dropdown = document.getElementById('col-filter-dropdown');
+      if (!dropdown.contains(e.target) && !e.target.closest('.col-filter-btn')) closeColumnFilter();
+    }
+    
+    function closeOnEscape(e) {
+      if (e.key === 'Escape') closeColumnFilter();
+    }
+    
+    function positionDropdown(dropdown, anchor) {
+      if (!anchor) return;
+      const rect = anchor.getBoundingClientRect();
+      dropdown.style.left = Math.max(8, rect.left) + 'px';
+      dropdown.style.top = (rect.bottom + 4) + 'px';
+    }
+    
+    async function fetchFacetsAndRender(column, listEl) {
+      listEl.innerHTML = '<div class="filter-option" style="color: var(--text-muted);">Loading…</div>';
+      const params = new URLSearchParams({ column, limit: '200' });
+      if (paginationState.search) params.set('search', paginationState.search);
+      params.set('hide_applied', paginationState.hideApplied ? 'true' : 'false');
+      if (paginationState.source) params.set('source', paginationState.source);
+      (paginationState.statusList || []).forEach(s => params.append('status[]', s));
+      (paginationState.recommendationList || []).forEach(r => params.append('recommendation[]', r));
+      (paginationState.companyList || []).forEach(c => params.append('company[]', c));
+      (paginationState.titleList || []).forEach(t => params.append('title[]', t));
+      (paginationState.locationList || []).forEach(l => params.append('location[]', l));
+      try {
+        const resp = await fetch('/api/jobs/facets?' + params.toString());
+        const data = await resp.json();
+        if (data.values && data.values.length) {
+          renderFilterList(column, data.values, listEl);
+        } else {
+          listEl.innerHTML = '<div class="filter-option" style="color: var(--text-muted);">No options</div>';
+        }
+      } catch (e) {
+        console.error('Facets error:', e);
+        listEl.innerHTML = '<div class="filter-option" style="color: var(--text-muted);">Failed to load</div>';
+      }
+    }
+    
+    function getCurrentSelectionForColumn(column) {
+      const list = column === 'company' ? (paginationState.companyList || []) :
+        column === 'title' ? (paginationState.titleList || []) :
+        column === 'location' ? (paginationState.locationList || []) :
+        column === 'status' ? (paginationState.statusList || []) :
+        (paginationState.recommendationList || []);
+      return list.slice();
+    }
+    
+    function renderFilterList(column, values, listEl) {
+      const selected = getCurrentSelectionForColumn(column);
+      const searchTerm = (document.getElementById('col-filter-search').value || '').toLowerCase();
+      const filtered = searchTerm ? values.filter(v => String(v).toLowerCase().includes(searchTerm)) : values;
+      
+      listEl.innerHTML = '';
+      filtered.forEach((val, i) => {
+        const id = 'cf-' + column + '-' + i;
+        const checked = selected.includes(val);
+        const div = document.createElement('div');
+        div.className = 'filter-option';
+        div.innerHTML = '<input type="checkbox" id="' + id + '" value="' + escapeHtml(val) + '" ' + (checked ? 'checked' : '') + '><label for="' + id + '">' + escapeHtml(val) + '</label>';
+        listEl.appendChild(div);
+      });
+      
+      const selectAll = document.getElementById('col-filter-select-all');
+      if (selectAll) {
+        selectAll.onclick = () => {
+          const allChecked = filtered.every(v => selected.includes(v));
+          listEl.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+            cb.checked = !allChecked;
+          });
+        };
+        selectAll.textContent = filtered.every(v => selected.includes(v)) ? 'Deselect all' : 'Select all';
+      }
+    }
+    
+    function renderFilterListRecommendation(listEl) {
+      const selected = getCurrentSelectionForColumn('recommendation');
+      listEl.innerHTML = '';
+      RECOMMENDATION_VALUES.forEach(({ value, label }) => {
+        const id = 'cf-rec-' + value;
+        const div = document.createElement('div');
+        div.className = 'filter-option';
+        div.innerHTML = '<input type="checkbox" id="' + id + '" value="' + value + '" ' + (selected.includes(value) ? 'checked' : '') + '><label for="' + id + '">' + label + '</label>';
+        listEl.appendChild(div);
+      });
+    }
+    
+    function applyColumnFilterFromDropdown() {
+      if (!currentColumnFilter) return;
+      const listEl = document.getElementById('col-filter-list');
+      const checkboxes = listEl.querySelectorAll('input[type="checkbox"]:checked');
+      const selected = Array.from(checkboxes).map(cb => cb.value);
+      if (currentColumnFilter === 'company') paginationState.companyList = selected;
+      else if (currentColumnFilter === 'title') paginationState.titleList = selected;
+      else if (currentColumnFilter === 'location') paginationState.locationList = selected;
+      else if (currentColumnFilter === 'status') paginationState.statusList = selected;
+      else if (currentColumnFilter === 'recommendation') paginationState.recommendationList = selected;
+      paginationState.page = 1;
+      closeColumnFilter();
+      loadJobsPage();
+    }
+    
+    function clearColumnFilterFromDropdown() {
+      if (!currentColumnFilter) return;
+      if (currentColumnFilter === 'company') paginationState.companyList = [];
+      else if (currentColumnFilter === 'title') paginationState.titleList = [];
+      else if (currentColumnFilter === 'location') paginationState.locationList = [];
+      else if (currentColumnFilter === 'status') paginationState.statusList = [];
+      else if (currentColumnFilter === 'recommendation') paginationState.recommendationList = [];
+      paginationState.page = 1;
+      closeColumnFilter();
+      loadJobsPage();
+    }
+    
+    document.getElementById('col-filter-apply-btn').addEventListener('click', applyColumnFilterFromDropdown);
+    document.getElementById('col-filter-clear-btn').addEventListener('click', clearColumnFilterFromDropdown);
+    document.getElementById('col-filter-search').addEventListener('input', function() {
+      if (currentColumnFilter && currentColumnFilter !== 'status' && currentColumnFilter !== 'recommendation') {
+        const listEl = document.getElementById('col-filter-list');
+        const opts = listEl.querySelectorAll('.filter-option');
+        const term = this.value.toLowerCase();
+        opts.forEach(o => {
+          const label = o.querySelector('label');
+          o.style.display = (!term || (label && label.textContent.toLowerCase().includes(term))) ? '' : 'none';
+        });
+      }
+    });
+    
+    function updateColumnFilterBadges() {
+      const cols = ['company', 'title', 'location', 'status', 'recommendation'];
+      cols.forEach(col => {
+        const list = col === 'company' ? (paginationState.companyList || []) :
+          col === 'title' ? (paginationState.titleList || []) :
+          col === 'location' ? (paginationState.locationList || []) :
+          col === 'status' ? (paginationState.statusList || []) :
+          (paginationState.recommendationList || []);
+        const btn = document.querySelector('.col-filter-btn[data-column="' + col + '"]');
+        if (!btn) return;
+        let badge = btn.querySelector('.filter-count');
+        if (list.length > 0) {
+          if (!badge) {
+            badge = document.createElement('span');
+            badge.className = 'filter-count';
+            btn.appendChild(badge);
+          }
+          badge.textContent = list.length;
+          badge.style.display = 'flex';
+        } else if (badge) {
+          badge.style.display = 'none';
+        }
+      });
+    }
+    
+    // Pagination functions
+    function goToPage(page) {
+      if (page < 1 || page > paginationState.totalPages) return;
+      paginationState.page = page;
+      loadJobsPage();
+    }
+    
+    function changePerPage(perPage) {
+      paginationState.perPage = parseInt(perPage);
+      paginationState.page = 1;
+      try { sessionStorage.setItem('jobs-per-page-user-set', 'true'); } catch (e) {}
+      loadJobsPage();
+    }
+    
+    async function loadJobsPage() {
+      if (isRefreshing) return;
+      isRefreshing = true;
+      
+      const tableContainer = document.querySelector('.jobs-table-container');
+      if (tableContainer) {
+        tableContainer.classList.add('table-loading');
+      }
+      
+      try {
+        const params = new URLSearchParams({
+          page: paginationState.page,
+          per_page: paginationState.perPage,
+          sort_by: paginationState.sortBy,
+          sort_dir: paginationState.sortDir
+        });
+        
+        if (!(paginationState.statusList && paginationState.statusList.length)) {
+          if (paginationState.status) params.set('status', paginationState.status);
+        }
+        if (paginationState.search) params.set('search', paginationState.search);
+        if (!(paginationState.recommendationList && paginationState.recommendationList.length)) {
+          if (paginationState.recommendation) params.set('recommendation', paginationState.recommendation);
+        }
+        params.set('hide_applied', paginationState.hideApplied ? 'true' : 'false');
+        if (paginationState.source) params.set('source', paginationState.source);
+        (paginationState.companyList || []).forEach(c => params.append('company[]', c));
+        (paginationState.titleList || []).forEach(t => params.append('title[]', t));
+        (paginationState.locationList || []).forEach(l => params.append('location[]', l));
+        (paginationState.statusList || []).forEach(s => params.append('status[]', s));
+        (paginationState.recommendationList || []).forEach(r => params.append('recommendation[]', r));
+        
+        const resp = await fetch('/api/jobs?' + params.toString());
+        const data = await resp.json();
+        
+        paginationState.totalItems = data.pagination.total_items;
+        paginationState.totalPages = data.pagination.total_pages;
+        paginationState.page = data.pagination.page;
+        
+        replaceJobsTable(data.jobs);
+        updatePaginationUI(data.pagination);
+        updateSummaryStats(data.counts);
+        updatePendingBanner(data.counts);
+        updateColumnFilterBadges();
+        updateUrlState();
+        
+        const emptyFiltered = document.getElementById('jobs-empty-filtered');
+        const tableContainer = document.querySelector('.jobs-table-container');
+        const paginationContainer = document.getElementById('pagination-container');
+        if (data.pagination.total_items === 0 && emptyFiltered) {
+          emptyFiltered.style.display = 'block';
+          if (tableContainer) tableContainer.style.display = 'none';
+          if (paginationContainer) paginationContainer.style.display = 'none';
+        } else {
+          if (emptyFiltered) emptyFiltered.style.display = 'none';
+          if (tableContainer) tableContainer.style.display = '';
+          if (paginationContainer) paginationContainer.style.display = '';
+        }
+        
+      } catch (e) {
+        console.error('Error loading jobs:', e);
+      } finally {
+        isRefreshing = false;
+        if (tableContainer) {
+          tableContainer.classList.remove('table-loading');
+        }
+      }
+    }
+    
+    function clearAllColumnFilters() {
+      paginationState.companyList = [];
+      paginationState.titleList = [];
+      paginationState.locationList = [];
+      paginationState.statusList = [];
+      paginationState.recommendationList = [];
+      paginationState.page = 1;
+      updateColumnFilterBadges();
+      loadJobsPage();
+    }
+    
+    function replaceJobsTable(jobs) {
+      const tbody = document.getElementById('jobs-tbody');
+      tbody.innerHTML = '';
+      
+      jobs.forEach(job => {
+        const row = createJobRow(job);
+        if (selectedJobs.has(job.id)) {
+          row.classList.add('selected');
+          row.querySelector('.row-checkbox').checked = true;
+        }
+        tbody.appendChild(row);
+      });
+      
+      updateSelectionUI();
+    }
+    
+    function updatePaginationUI(pagination) {
+      const start = pagination.total_items === 0 ? 0 : ((pagination.page - 1) * pagination.per_page) + 1;
+      const end = Math.min(pagination.page * pagination.per_page, pagination.total_items);
+      
+      document.getElementById('pagination-start').textContent = start;
+      document.getElementById('pagination-end').textContent = end;
+      document.getElementById('pagination-total').textContent = pagination.total_items;
+      
+      document.getElementById('pagination-first').disabled = !pagination.has_prev;
+      document.getElementById('pagination-prev').disabled = !pagination.has_prev;
+      document.getElementById('pagination-next').disabled = !pagination.has_next;
+      document.getElementById('pagination-last').disabled = !pagination.has_next;
+      
+      document.getElementById('pagination-prev').onclick = () => goToPage(pagination.page - 1);
+      document.getElementById('pagination-next').onclick = () => goToPage(pagination.page + 1);
+      document.getElementById('pagination-first').onclick = () => goToPage(1);
+      document.getElementById('pagination-last').onclick = () => goToPage(pagination.total_pages);
+      
+      const pagesContainer = document.getElementById('pagination-pages');
+      pagesContainer.innerHTML = '';
+      
+      const maxVisiblePages = 7;
+      let startPage = Math.max(1, pagination.page - Math.floor(maxVisiblePages / 2));
+      let endPage = Math.min(pagination.total_pages, startPage + maxVisiblePages - 1);
+      
+      if (endPage - startPage < maxVisiblePages - 1) {
+        startPage = Math.max(1, endPage - maxVisiblePages + 1);
+      }
+      
+      if (startPage > 1) {
+        pagesContainer.appendChild(createPageButton(1, pagination.page));
+        if (startPage > 2) {
+          const ellipsis = document.createElement('span');
+          ellipsis.className = 'pagination-ellipsis';
+          ellipsis.textContent = '...';
+          pagesContainer.appendChild(ellipsis);
+        }
+      }
+      
+      for (let p = startPage; p <= endPage; p++) {
+        pagesContainer.appendChild(createPageButton(p, pagination.page));
+      }
+      
+      if (endPage < pagination.total_pages) {
+        if (endPage < pagination.total_pages - 1) {
+          const ellipsis = document.createElement('span');
+          ellipsis.className = 'pagination-ellipsis';
+          ellipsis.textContent = '...';
+          pagesContainer.appendChild(ellipsis);
+        }
+        pagesContainer.appendChild(createPageButton(pagination.total_pages, pagination.page));
+      }
+      
+      document.getElementById('per-page-select').value = pagination.per_page;
+    }
+    
+    function createPageButton(pageNum, currentPage) {
+      const btn = document.createElement('button');
+      btn.className = 'pagination-btn' + (pageNum === currentPage ? ' active' : '');
+      btn.textContent = pageNum;
+      if (pageNum !== currentPage) {
+        btn.onclick = () => goToPage(pageNum);
+      }
+      return btn;
+    }
+    
+    function updateSummaryStats(counts) {
+      const statsTotal = document.getElementById('stats-total');
+      const statsPendingScrape = document.getElementById('stats-pending-scrape');
+      const statsPendingMatch = document.getElementById('stats-pending-match');
+      const statsMatched = document.getElementById('stats-matched');
+      
+      if (statsTotal) statsTotal.textContent = counts.total;
+      if (statsPendingScrape) statsPendingScrape.textContent = counts.pending_scrape;
+      if (statsPendingMatch) statsPendingMatch.textContent = counts.pending_match;
+      if (statsMatched) statsMatched.textContent = counts.matched;
+    }
+    
+    function updateUrlState() {
+      const params = new URLSearchParams();
+      
+      if (paginationState.page > 1) params.set('page', paginationState.page);
+      if (paginationState.perPage !== 25) params.set('per_page', paginationState.perPage);
+      if (paginationState.status) params.set('status', paginationState.status);
+      if (paginationState.search) params.set('search', paginationState.search);
+      if (paginationState.recommendation) params.set('recommendation', paginationState.recommendation);
+      params.set('hide_applied', paginationState.hideApplied ? 'true' : 'false');
+      if (paginationState.sortBy !== 'score') params.set('sort_by', paginationState.sortBy);
+      if (paginationState.sortDir !== 'desc') params.set('sort_dir', paginationState.sortDir);
+      
+      const newUrl = params.toString() ? '/jobs?' + params.toString() : '/jobs';
+      window.history.replaceState({}, '', newUrl);
+    }
+    
+    function updateSelectionUI() {
+      const allCheckboxes = document.querySelectorAll('.row-checkbox');
+      const visibleChecked = Array.from(allCheckboxes).filter(cb => cb.checked).length;
+      
+      document.getElementById('selected-count').textContent = selectedJobs.size;
+      document.getElementById('bulk-actions').classList.toggle('visible', selectedJobs.size > 0);
+      
+      const selectAll = document.getElementById('select-all');
+      selectAll.checked = visibleChecked > 0 && visibleChecked === allCheckboxes.length;
+      selectAll.indeterminate = visibleChecked > 0 && visibleChecked < allCheckboxes.length;
+    }
+    
+    // Modal functions
+    let currentModalTab = 'overview';
+    
+    function switchTab(tabName) {
+      currentModalTab = tabName;
+      
+      // Update tab buttons
+      document.querySelectorAll('.modal-tab').forEach(tab => {
+        tab.classList.toggle('active', tab.dataset.tab === tabName);
+      });
+      
+      // Update tab panels
+      document.querySelectorAll('.tab-panel').forEach(panel => {
+        panel.classList.toggle('active', panel.id === `tab-${tabName}`);
+      });
+    }
+    
+    function formatModalDate(isoString) {
+      if (!isoString) return '--';
+      const date = new Date(isoString);
+      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    }
+    
+    async function openJobModal(jobId) {
+      currentModalJobId = jobId;  // Track current job
+      const modal = document.getElementById('job-modal');
+      modal.classList.add('active');
+      
+      // Reset to overview tab
+      switchTab('overview');
+      
+      // Reset content
+      document.getElementById('modal-description').textContent = 'Loading...';
+      document.getElementById('overview-score-section').style.display = 'none';
+      document.getElementById('match-no-data').style.display = 'none';
+      document.getElementById('match-content').style.display = 'none';
+      document.getElementById('modal-reasons').style.display = 'none';
+      document.getElementById('modal-inferred').style.display = 'none';
+      document.getElementById('modal-missing').style.display = 'none';
+      document.getElementById('modal-suggestions').style.display = 'none';
+      
+      try {
+        const resp = await fetch(`/api/job/${jobId}`);
+        const job = await resp.json();
+        
+        // --- Header ---
+        const logoEl = document.getElementById('modal-logo');
+        if (job.company_logo_url) {
+          logoEl.src = getLogoUrl(job.company_logo_url);
+          logoEl.style.display = 'block';
+        } else {
+          logoEl.style.display = 'none';
+        }
+        document.getElementById('modal-title').textContent = job.title;
+        document.getElementById('modal-company-location').textContent = `${job.company} - ${job.location}`;
+        
+        // --- Overview Tab ---
+        const overviewLogo = document.getElementById('overview-logo');
+        const overviewPlaceholder = overviewLogo.nextElementSibling;
+        if (job.company_logo_url) {
+          overviewLogo.src = getLogoUrl(job.company_logo_url);
+          overviewLogo.style.display = 'block';
+          overviewPlaceholder.style.display = 'none';
+        } else {
+          overviewLogo.style.display = 'none';
+          overviewPlaceholder.textContent = job.company ? job.company[0].toUpperCase() : '?';
+          overviewPlaceholder.style.display = 'flex';
+        }
+        document.getElementById('overview-title').textContent = job.title;
+        document.getElementById('overview-company').textContent = job.company;
+        document.getElementById('overview-location').textContent = job.location;
+        document.getElementById('overview-date-posted').textContent = formatModalDate(job.date_posted);
+        document.getElementById('overview-date-added').textContent = formatModalDate(job.date_found);
+        document.getElementById('overview-easy-apply').textContent = job.easy_apply ? 'Yes' : 'No';
+        document.getElementById('modal-link').href = job.url;
+        
+        // Show/hide Apply with Assistant button based on Easy Apply status
+        const btnApplyAssistant = document.getElementById('btn-apply-assistant');
+        if (job.easy_apply) {
+          btnApplyAssistant.style.display = 'inline-flex';
+          btnApplyAssistant.href = `/apply/${job.id}`;
+        } else {
+          btnApplyAssistant.style.display = 'none';
+        }
+        
+        // Score section in overview
+        if (job.match) {
+          const scoreSection = document.getElementById('overview-score-section');
+          scoreSection.style.display = 'flex';
+          scoreSection.className = 'overview-score';
+          
+          // Add background class based on score
+          if (job.match.score >= 70) {
+            // Default green gradient already applied
+          } else if (job.match.score >= 50) {
+            scoreSection.classList.add('score-consider-bg');
+          } else {
+            scoreSection.classList.add('score-skip-bg');
+          }
+          
+          animateScore(job.match.score);
+          
+          const recEl = document.getElementById('modal-recommendation');
+          recEl.textContent = job.match.recommendation;
+          recEl.className = 'score-badge';
+          if (job.match.score >= 70) {
+            recEl.classList.add('score-apply');
+          } else if (job.match.score >= 50) {
+            recEl.classList.add('score-consider');
+          } else {
+            recEl.classList.add('score-skip');
+          }
+        }
+        
+        // --- Description Tab ---
+        document.getElementById('modal-description').textContent = job.full_description || 'No description available.';
+        
+        // --- Match Analysis Tab ---
+        if (job.match) {
+          document.getElementById('match-no-data').style.display = 'none';
+          document.getElementById('match-content').style.display = 'block';
+          
+          if (job.match.top_reasons && job.match.top_reasons.length > 0) {
+            document.getElementById('modal-reasons').style.display = 'block';
+            document.getElementById('modal-reasons-list').innerHTML = 
+              job.match.top_reasons.map(r => `<li>${escapeHtml(r)}</li>`).join('');
+          }
+          
+          if (job.match.inferred_qualifications && job.match.inferred_qualifications.length > 0) {
+            document.getElementById('modal-inferred').style.display = 'block';
+            document.getElementById('modal-inferred-list').innerHTML = 
+              job.match.inferred_qualifications.map(r => `<li>${escapeHtml(r)}</li>`).join('');
+          }
+          
+          if (job.match.missing_requirements && job.match.missing_requirements.length > 0) {
+            document.getElementById('modal-missing').style.display = 'block';
+            document.getElementById('modal-missing-list').innerHTML = 
+              job.match.missing_requirements.map(r => `<li>${escapeHtml(r)}</li>`).join('');
+          }
+          
+          if (job.match.suggested_resume_bullets && job.match.suggested_resume_bullets.length > 0) {
+            document.getElementById('modal-suggestions').style.display = 'block';
+            document.getElementById('modal-suggestions-list').innerHTML = 
+              job.match.suggested_resume_bullets.map(r => `<li>${escapeHtml(r)}</li>`).join('');
+          }
+        } else {
+          document.getElementById('match-no-data').style.display = 'block';
+          document.getElementById('match-content').style.display = 'none';
+        }
+        
+        // --- Company Tab ---
+        const companyLogo = document.getElementById('company-logo-large');
+        const companyPlaceholder = companyLogo.nextElementSibling;
+        if (job.company_logo_url) {
+          companyLogo.src = getLogoUrl(job.company_logo_url);
+          companyLogo.style.display = 'block';
+          companyPlaceholder.style.display = 'none';
+        } else {
+          companyLogo.style.display = 'none';
+          companyPlaceholder.textContent = job.company ? job.company[0].toUpperCase() : '?';
+          companyPlaceholder.style.display = 'flex';
+        }
+        document.getElementById('company-name-display').textContent = job.company;
+        document.getElementById('company-location-display').textContent = job.location;
+        
+        // Try to build company LinkedIn URL
+        const companySlug = job.company.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+        document.getElementById('company-linkedin-link').href = `https://www.linkedin.com/company/${companySlug}`;
+        
+      } catch (e) {
+        console.error('Error loading job:', e);
+        document.getElementById('modal-description').textContent = 'Failed to load job details.';
+      }
+    }
+    
+    function animateScore(score) {
+      const circle = document.getElementById('score-progress');
+      const text = document.getElementById('score-value');
+      const circumference = 264; // Updated for smaller circle (2 * PI * 42)
+      
+      if (score >= 70) {
+        circle.style.stroke = 'var(--accent-success)';
+      } else if (score >= 50) {
+        circle.style.stroke = 'var(--accent-warning)';
+      } else {
+        circle.style.stroke = 'var(--accent-danger)';
+      }
+      
+      let current = 0;
+      const duration = 1000;
+      const startTime = performance.now();
+      
+      function animate(currentTime) {
+        const elapsed = currentTime - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        
+        current = Math.round(progress * score);
+        const offset = circumference - (current / 100) * circumference;
+        
+        circle.style.strokeDashoffset = offset;
+        text.textContent = current + '%';
+        
+        if (progress < 1) {
+          requestAnimationFrame(animate);
+        }
+      }
+      
+      requestAnimationFrame(animate);
+    }
+    
+    function closeModal() {
+      document.getElementById('job-modal').classList.remove('active');
+      currentModalJobId = null;
+    }
+    
+    function openLinkedInJob(event) {
+      event.preventDefault();
+      const link = document.getElementById('modal-link');
+      const jobId = currentModalJobId;
+      
+      // Open LinkedIn in new tab
+      window.open(link.href, '_blank', 'noopener,noreferrer');
+      
+      // Show confirmation dialog after short delay to let user apply
+      pendingAppliedJobId = jobId;
+      setTimeout(() => {
+        document.getElementById('applied-dialog').style.display = 'flex';
+      }, 1000);
+    }
+    
+    function applyWithAssistant(event) {
+      event.preventDefault();
+      const btn = document.getElementById('btn-apply-assistant');
+      // Navigate to the apply page
+      window.location.href = btn.href;
+    }
+    
+    async function confirmApplied(didApply) {
+      document.getElementById('applied-dialog').style.display = 'none';
+      
+      if (didApply && pendingAppliedJobId) {
+        try {
+          await fetch(`/api/job/${pendingAppliedJobId}/applied`, { method: 'POST' });
+          await refreshJobsTable();
+          showNotification('Job marked as applied!', 'success');
+          if (window.refreshNavBadges) {
+            window.refreshNavBadges();
+          }
+        } catch (e) {
+          console.error('Failed to mark job as applied:', e);
+          showNotification('Failed to update job status', 'error');
+        }
+      }
+      pendingAppliedJobId = null;
+    }
+    
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        // Close applied dialog if open
+        const appliedDialog = document.getElementById('applied-dialog');
+        if (appliedDialog.style.display === 'flex') {
+          confirmApplied(false);
+          return;
+        }
+        closeModal();
+      }
+      // Arrow keys for tab navigation when modal is open
+      if (document.getElementById('job-modal').classList.contains('active')) {
+        const tabs = ['overview', 'description', 'match', 'company'];
+        const currentIndex = tabs.indexOf(currentModalTab);
+        if (e.key === 'ArrowRight' && currentIndex < tabs.length - 1) {
+          switchTab(tabs[currentIndex + 1]);
+        } else if (e.key === 'ArrowLeft' && currentIndex > 0) {
+          switchTab(tabs[currentIndex - 1]);
+        }
+      }
+    });
+    
+    // Dynamic table refresh - uses current pagination state
+    async function refreshJobsTable() {
+      await loadJobsPage();
+    }
+    
+    function formatDate(isoString) {
+      if (!isoString) return '<span class="muted">--</span>';
+      const date = new Date(isoString);
+      const month = date.toLocaleString('en', { month: 'short' });
+      const day = date.getDate();
+      const full = date.toLocaleString('en', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+      return `<span class="date-text" title="${full}">${month} ${day}</span>`;
+    }
+    
+    function updateJobRow(row, job) {
+      // Preserve processing state
+      const wasProcessing = row.classList.contains('processing');
+      
+      // Update data attributes
+      row.dataset.title = job.title.toLowerCase();
+      row.dataset.company = job.company.toLowerCase();
+      row.dataset.location = job.location.toLowerCase();
+      row.dataset.posted = job.date_posted || '';
+      row.dataset.added = job.date_found || '';
+      row.dataset.status = job.status;
+      row.dataset.score = job.score !== null ? job.score : -1;
+      row.dataset.recommendation = job.recommendation || '';
+      
+      // Restore processing state
+      if (wasProcessing) {
+        row.classList.add('processing');
+      }
+      
+      // Update cells
+      const cells = row.querySelectorAll('td');
+      
+      // Company cell (index 1)
+      const companyCell = cells[1];
+      const logoUrl = getLogoUrl(job.company_logo_url);
+      const logoHtml = job.company_logo_url 
+        ? `<img class="company-logo" src="${logoUrl}" alt="" onerror="this.outerHTML='<div class=\\'company-logo-placeholder\\'>${job.company[0].toUpperCase()}</div>'">`
+        : `<div class="company-logo-placeholder">${job.company[0].toUpperCase()}</div>`;
+      companyCell.innerHTML = `<div class="company-cell">${logoHtml}${escapeHtml(job.company)}</div>`;
+      companyCell.onclick = () => openJobModal(job.id);
+      
+      // Title cell (index 2)
+      cells[2].textContent = job.title;
+      cells[2].onclick = () => openJobModal(job.id);
+      
+      // Location cell (index 3)
+      cells[3].textContent = job.location;
+      cells[3].onclick = () => openJobModal(job.id);
+      
+      // Posted date cell (index 4)
+      cells[4].innerHTML = formatDate(job.date_posted);
+      cells[4].className = 'date-cell';
+      cells[4].onclick = () => openJobModal(job.id);
+      
+      // Added date cell (index 5)
+      cells[5].innerHTML = formatDate(job.date_found);
+      cells[5].className = 'date-cell';
+      cells[5].onclick = () => openJobModal(job.id);
+      
+      // Status cell (index 6)
+      const statusBadge = getStatusBadge(job.status);
+      cells[6].innerHTML = statusBadge;
+      cells[6].onclick = () => openJobModal(job.id);
+      
+      // Score cell (index 7)
+      cells[7].innerHTML = job.score !== null ? `<span class="match-score">${job.score}%</span>` : '<span class="muted">--</span>';
+      cells[7].onclick = () => openJobModal(job.id);
+      
+      // Recommendation cell (index 8)
+      cells[8].innerHTML = getRecommendationBadge(job.score, job.recommendation);
+      cells[8].onclick = () => openJobModal(job.id);
+    }
+    
+    function createJobRow(job) {
+      const row = document.createElement('tr');
+      row.className = 'job-row';
+      row.dataset.jobId = job.id;
+      row.dataset.title = job.title.toLowerCase();
+      row.dataset.company = job.company.toLowerCase();
+      row.dataset.location = job.location.toLowerCase();
+      row.dataset.posted = job.date_posted || '';
+      row.dataset.added = job.date_found || '';
+      row.dataset.status = job.status;
+      row.dataset.score = job.score !== null ? job.score : -1;
+      row.dataset.recommendation = job.recommendation || '';
+      row.dataset.source = job.source || 'linkedin';
+      
+      const logoUrl = getLogoUrl(job.company_logo_url);
+      const logoHtml = job.company_logo_url 
+        ? `<img class="company-logo" src="${logoUrl}" alt="" onerror="this.outerHTML='<div class=\\'company-logo-placeholder\\'>${job.company[0].toUpperCase()}</div>'">`
+        : `<div class="company-logo-placeholder">${job.company[0].toUpperCase()}</div>`;
+      
+      const sourceBadge = getSourceBadge(job.source || 'linkedin');
+      
+      row.innerHTML = `
+        <td onclick="event.stopPropagation();">
+          <input type="checkbox" class="job-checkbox row-checkbox" data-id="${job.id}" onclick="updateSelection()">
+        </td>
+        <td onclick="openJobModal(${job.id})">
+          <div class="company-cell">${logoHtml}<div><div>${escapeHtml(job.company)}</div>${sourceBadge}</div></div>
+        </td>
+        <td onclick="openJobModal(${job.id})">${escapeHtml(job.title)}</td>
+        <td onclick="openJobModal(${job.id})">${escapeHtml(job.location)}</td>
+        <td onclick="openJobModal(${job.id})" class="date-cell">${formatDate(job.date_posted)}</td>
+        <td onclick="openJobModal(${job.id})" class="date-cell">${formatDate(job.date_found)}</td>
+        <td onclick="openJobModal(${job.id})">${getStatusBadge(job.status)}</td>
+        <td onclick="openJobModal(${job.id})">${job.score !== null ? `<span class="match-score">${job.score}%</span>` : '<span class="muted">--</span>'}</td>
+        <td onclick="openJobModal(${job.id})">${getRecommendationBadge(job.score, job.recommendation)}</td>
+      `;
+      
+      return row;
+    }
+    
+    function getSourceBadge(source) {
+      const sourceMap = {
+        'linkedin': '<span class="source-badge source-linkedin">LinkedIn</span>',
+        'greenhouse': '<span class="source-badge source-greenhouse">Greenhouse</span>',
+        'lever': '<span class="source-badge source-lever">Lever</span>',
+        'workday': '<span class="source-badge source-workday">Workday</span>',
+        'custom': '<span class="source-badge source-custom">Custom</span>',
+      };
+      return sourceMap[source] || sourceMap['linkedin'];
+    }
+    
+    function getStatusBadge(status) {
+      const statusMap = {
+        'pending_scrape': '<span class="status-badge status-pending-scrape">Pending Scrape</span>',
+        'pending_match': '<span class="status-badge status-pending-match">Pending Match</span>',
+        'matched': '<span class="status-badge status-matched">Matched</span>',
+        'applied': '<span class="status-badge status-applied">Applied</span>',
+      };
+      return statusMap[status] || `<span class="status-badge status-discovered">${status}</span>`;
+    }
+    
+    function getRecommendationBadge(score, recommendation) {
+      if (score === null) return '<span class="muted">--</span>';
+      if (score >= 70) return '<span class="score-badge score-apply">Apply</span>';
+      if (score >= 50) return '<span class="score-badge score-consider">Consider</span>';
+      return '<span class="score-badge score-skip">Skip</span>';
+    }
+    
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+    
+    function updatePendingBanner(counts) {
+      const banner = document.getElementById('pending-banner');
+      const progressBanner = document.getElementById('job-progress-scrape-match');
+      const isProcessing = progressBanner && progressBanner.style.display !== 'none';
+      const totalPending = counts.pending_scrape + counts.pending_match;
+      
+      if (banner) {
+        // Never show pending banner while processing is running
+        if (isProcessing) {
+          banner.style.display = 'none';
+        } else if (totalPending > 0) {
+          banner.style.display = 'flex';
+          let text = '';
+          if (counts.pending_scrape) text += `<strong>${counts.pending_scrape}</strong> pending scrape`;
+          if (counts.pending_scrape && counts.pending_match) text += ' | ';
+          if (counts.pending_match) text += `<strong>${counts.pending_match}</strong> pending match`;
+          banner.querySelector('.pending-banner-text').innerHTML = text;
+        } else {
+          banner.style.display = 'none';
+        }
+      }
+    }
+    
+    // Initialize filters from template state
+    function initializeFilters() {
+      document.getElementById('search-input').value = paginationState.search || '';
+      document.getElementById('status-filter').value = paginationState.status || '';
+      document.getElementById('recommendation-filter').value = paginationState.recommendation || '';
+      document.getElementById('hide-applied-checkbox').checked = paginationState.hideApplied || false;
+      document.getElementById('per-page-select').value = paginationState.perPage;
+      
+      // Restore collapsible filters panel state
+      try {
+        const details = document.getElementById('filters-details');
+        if (details && sessionStorage.getItem('jobs-filters-open') === 'true') {
+          details.setAttribute('open', '');
+        }
+      } catch (e) {}
+      updateFiltersSummaryText();
+      applySmartPerPageDefault();
+      
+      document.querySelectorAll('th.sortable').forEach(th => {
+        th.classList.remove('sort-asc', 'sort-desc');
+        if (th.dataset.sort === currentSort.column) {
+          th.classList.add(currentSort.direction === 'asc' ? 'sort-asc' : 'sort-desc');
+        }
+      });
+    }
+    
+    function computeSmartPerPage() {
+      const h = window.innerHeight || 800;
+      // Short viewports: keep it light; tall viewports: show more by default.
+      if (h >= 1050) return 100;
+      if (h >= 880) return 50;
+      return 25;
+    }
+    
+    function applySmartPerPageDefault() {
+      let hasPerPageInUrl = false;
+      try { hasPerPageInUrl = new URLSearchParams(window.location.search).has('per_page'); } catch (e) {}
+      let userSet = false;
+      try { userSet = sessionStorage.getItem('jobs-per-page-user-set') === 'true'; } catch (e) {}
+      if (hasPerPageInUrl || userSet) return;
+      
+      const desired = computeSmartPerPage();
+      if (desired !== paginationState.perPage) {
+        paginationState.perPage = desired;
+        const sel = document.getElementById('per-page-select');
+        if (sel) sel.value = String(desired);
+        paginationState.page = 1;
+        loadJobsPage();
+      }
+    }
+    
+    function updateFiltersSummaryText() {
+      const el = document.querySelector('.filters-summary-text');
+      if (!el) return;
+      const n = [paginationState.search, paginationState.status, paginationState.recommendation, paginationState.source].filter(Boolean).length;
+      const hideOn = document.getElementById('hide-applied-checkbox');
+      const activeCount = n + (hideOn && hideOn.checked ? 1 : 0);
+      el.textContent = activeCount ? `Filters (${activeCount})` : 'Filters';
+    }
+    
+    // Persist filters panel open state and update summary when toggled
+    (function() {
+      const details = document.getElementById('filters-details');
+      if (details) {
+        details.addEventListener('toggle', function() {
+          try { sessionStorage.setItem('jobs-filters-open', details.open); } catch (e) {}
+          updateFiltersSummaryText();
+        });
+      }
+    })();
+    
+    // Notification helper
+    function showNotification(message, type = 'info') {
+      console.log(`[${type}] ${message}`);
+    }
+    
+    // Initialize
+    initializeFilters();
+    checkProgress();
+    checkBatchSearch();
+    checkLogoRescrapeStatus();
+  </script>
+{% endblock %}

@@ -1,0 +1,684 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <style>
+    .profile-page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: var(--space-xl);
+    }
+    
+    .profile-page-header h1 {
+      font-size: var(--text-2xl);
+      font-weight: 700;
+      margin: 0;
+    }
+    
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+      margin-bottom: var(--space-md);
+    }
+    
+    .section-header h2 {
+      margin: 0;
+      font-size: var(--text-lg);
+    }
+    
+    .section-header .section-icon {
+      width: 24px;
+      height: 24px;
+      color: var(--accent-primary);
+    }
+    
+    .section-number {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      background: var(--gradient-primary);
+      border-radius: 50%;
+      font-size: var(--text-sm);
+      font-weight: 700;
+      color: white;
+      margin-right: var(--space-sm);
+    }
+    
+    /* LinkedIn Session Card */
+    .session-card {
+      position: relative;
+      background: linear-gradient(135deg, rgba(10, 102, 194, 0.15) 0%, rgba(0, 119, 181, 0.08) 100%);
+      border-color: rgba(10, 102, 194, 0.3);
+      overflow: hidden;
+    }
+    
+    .session-loading-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(10, 15, 26, 0.85);
+      backdrop-filter: blur(4px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-md);
+      z-index: 10;
+      transition: opacity 0.3s ease, visibility 0.3s ease;
+    }
+    
+    .session-loading-overlay.hidden {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+    
+    .session-spinner {
+      width: 32px;
+      height: 32px;
+      border: 3px solid var(--border-subtle);
+      border-top-color: var(--accent-primary);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    .session-loading-text {
+      color: var(--text-muted);
+      font-size: var(--text-sm);
+    }
+    
+    .session-content {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      gap: var(--space-lg);
+    }
+    
+    .session-info h3 {
+      margin: 0 0 var(--space-xs) 0;
+      font-size: var(--text-base);
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+    }
+    
+    .session-info p {
+      margin: 0;
+      color: var(--text-muted);
+      font-size: var(--text-sm);
+    }
+    
+    .session-status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+    
+    .session-status-dot.connected {
+      background: var(--accent-success);
+      box-shadow: 0 0 8px var(--accent-success);
+    }
+    
+    .session-status-dot.disconnected {
+      background: var(--text-muted);
+    }
+    
+    .session-status-dot.expired {
+      background: var(--accent-warning);
+    }
+    
+    .session-actions {
+      display: flex;
+      gap: var(--space-sm);
+      flex-wrap: wrap;
+    }
+    
+    .linkedin-btn {
+      background: #0a66c2;
+    }
+    
+    .linkedin-btn:hover {
+      background: #004182;
+    }
+    
+    /* Guest Toggle */
+    .guest-toggle-section {
+      margin-top: var(--space-lg);
+      padding-top: var(--space-lg);
+      border-top: 1px solid var(--border-subtle);
+    }
+    
+    .toggle-group {
+      display: flex;
+      align-items: flex-start;
+      gap: var(--space-md);
+      padding: var(--space-md);
+      background: var(--bg-primary);
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-subtle);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .toggle-group:hover {
+      border-color: var(--accent-primary);
+      background: rgba(59, 130, 246, 0.05);
+    }
+    
+    .toggle-group.active {
+      border-color: var(--accent-primary);
+      background: rgba(59, 130, 246, 0.1);
+    }
+    
+    .toggle-switch {
+      position: relative;
+      width: 44px;
+      height: 24px;
+      background: var(--bg-elevated);
+      border-radius: 12px;
+      transition: background 0.2s;
+      flex-shrink: 0;
+    }
+    
+    .toggle-switch::after {
+      content: '';
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 20px;
+      height: 20px;
+      background: white;
+      border-radius: 50%;
+      transition: transform 0.2s;
+    }
+    
+    .toggle-group.active .toggle-switch {
+      background: var(--accent-primary);
+    }
+    
+    .toggle-group.active .toggle-switch::after {
+      transform: translateX(20px);
+    }
+    
+    .toggle-content h4 {
+      margin: 0 0 var(--space-xs) 0;
+      font-size: var(--text-sm);
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+    }
+    
+    .toggle-content h4 svg {
+      width: 16px;
+      height: 16px;
+      color: var(--text-muted);
+    }
+    
+    .toggle-content p {
+      margin: 0;
+      font-size: var(--text-xs);
+      color: var(--text-muted);
+      line-height: var(--line-height-relaxed);
+    }
+    
+    .toggle-content {
+      min-width: 0;
+      flex: 1;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+    }
+    
+    /* CV Section */
+    .cv-card {
+      margin-top: var(--space-lg);
+    }
+    
+    .cv-status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-xs);
+      padding: var(--space-xs) var(--space-sm);
+      border-radius: var(--radius-full);
+      font-size: var(--text-xs);
+      font-weight: 500;
+    }
+    
+    .cv-status-badge.uploaded {
+      background: var(--accent-success-muted);
+      color: var(--accent-success);
+      border: 1px solid rgba(34, 197, 94, 0.3);
+    }
+    
+    .cv-status-badge.missing {
+      background: var(--accent-warning-muted);
+      color: var(--accent-warning);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+    
+    .cv-upload-area {
+      margin-top: var(--space-md);
+      padding: var(--space-lg);
+      border: 2px dashed var(--border-subtle);
+      border-radius: var(--radius-lg);
+      text-align: center;
+      transition: all 0.2s;
+    }
+    
+    .cv-upload-area:hover {
+      border-color: var(--accent-primary);
+      background: rgba(59, 130, 246, 0.05);
+    }
+    
+    .cv-upload-area.has-cv {
+      border-style: solid;
+      border-color: var(--accent-success);
+      background: var(--accent-success-muted);
+    }
+    
+    .cv-upload-icon {
+      width: 48px;
+      height: 48px;
+      margin: 0 auto var(--space-md);
+      color: var(--text-muted);
+    }
+    
+    .cv-upload-area h4 {
+      margin: 0 0 var(--space-xs) 0;
+      color: var(--text-primary);
+    }
+    
+    .cv-upload-area p {
+      margin: 0 0 var(--space-md) 0;
+      color: var(--text-muted);
+      font-size: var(--text-sm);
+    }
+    
+    .cv-preview-section {
+      margin-top: var(--space-lg);
+    }
+    
+    .cv-preview-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: var(--space-sm);
+    }
+    
+    .cv-preview-header h4 {
+      margin: 0;
+      font-size: var(--text-sm);
+      color: var(--text-secondary);
+    }
+    
+    .cv-path {
+      font-family: monospace;
+      font-size: var(--text-xs);
+      color: var(--text-muted);
+      padding: var(--space-xs) var(--space-sm);
+      background: var(--bg-elevated);
+      border-radius: var(--radius-sm);
+    }
+    
+    .cv-textarea {
+      min-height: 200px;
+      max-height: 50vh;
+      overflow-y: auto;
+      background: var(--bg-primary);
+      font-family: var(--font-sans);
+      line-height: var(--line-height-relaxed);
+      font-size: var(--text-sm);
+    }
+    
+    .form-row {
+      display: flex;
+      gap: var(--space-md);
+      align-items: flex-end;
+    }
+    
+    .form-row .form-group {
+      flex: 1;
+    }
+    
+    .form-group {
+      margin-bottom: var(--space-md);
+    }
+    
+    @media (max-width: 768px) {
+      .session-content {
+        flex-direction: column;
+      }
+      .session-actions {
+        width: 100%;
+      }
+      .session-actions .btn {
+        flex: 1;
+      }
+      .form-row {
+        flex-direction: column;
+      }
+    }
+  </style>
+
+  <div class="profile-page-header animate-slide-up">
+    <h1>Profile Setup</h1>
+  </div>
+
+  <!-- LinkedIn Session Card -->
+  <section id="section-linkedin" class="card session-card animate-slide-up">
+    <!-- Loading Overlay -->
+    <div class="session-loading-overlay" id="session-overlay">
+      <div class="session-spinner"></div>
+      <span class="session-loading-text">Checking LinkedIn session...</span>
+    </div>
+    
+    <!-- Session Content -->
+    <div class="section-header">
+      <span class="section-number">1</span>
+      <svg class="section-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path>
+        <rect x="2" y="9" width="4" height="12"></rect>
+        <circle cx="4" cy="4" r="2"></circle>
+      </svg>
+      <h2>LinkedIn Connection</h2>
+    </div>
+    
+    <div class="session-content">
+      <div class="session-info">
+        <h3>
+          <span class="session-status-dot disconnected" id="session-dot"></span>
+          <span id="session-title">Not Connected</span>
+        </h3>
+        <p id="session-message">Connect your LinkedIn account to access more job listings and get better search results.</p>
+      </div>
+      <div class="session-actions">
+        <button id="login-btn" onclick="startLogin()" class="btn linkedin-btn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+          </svg>
+          Connect LinkedIn
+        </button>
+        <button id="logout-btn" onclick="clearSession()" class="btn btn-secondary" style="display:none;">
+          Clear Session
+        </button>
+      </div>
+    </div>
+    
+    <!-- Guest Toggle -->
+    <div class="guest-toggle-section">
+      <div class="toggle-group" id="guest-toggle" onclick="toggleGuestMode()">
+        <div class="toggle-switch"></div>
+        <div class="toggle-content">
+          <h4>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+              <circle cx="9" cy="7" r="4"></circle>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+              <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+            </svg>
+            Search without using my LinkedIn account
+          </h4>
+          <p>Searches as a guest without your LinkedIn session. Results may be limited compared to authenticated search.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CV Upload Section -->
+  <section id="section-cv" class="card cv-card animate-slide-up" style="animation-delay: 0.1s;">
+    <div class="section-header">
+      <span class="section-number">2</span>
+      <svg class="section-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+        <polyline points="14 2 14 8 20 8"></polyline>
+        <line x1="16" y1="13" x2="8" y2="13"></line>
+        <line x1="16" y1="17" x2="8" y2="17"></line>
+        <polyline points="10 9 9 9 8 9"></polyline>
+      </svg>
+      <h2>CV / Resume</h2>
+      {% if resume_preview %}
+        <span class="cv-status-badge uploaded">Uploaded</span>
+      {% else %}
+        <span class="cv-status-badge missing">Not uploaded</span>
+      {% endif %}
+    </div>
+    
+    <p style="color:var(--text-muted);font-size:var(--text-sm);margin-bottom:var(--space-lg);">
+      Your CV is analyzed by the AI to match you with relevant jobs. Upload a plain text file (.txt) for best results.
+    </p>
+    
+    <form action="/upload-cv" method="post" enctype="multipart/form-data">
+      <div class="cv-upload-area {% if resume_preview %}has-cv{% endif %}">
+        {% if resume_preview %}
+          <svg class="cv-upload-icon" viewBox="0 0 24 24" fill="none" stroke="var(--accent-success)" stroke-width="2">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+          </svg>
+          <h4>CV Uploaded Successfully</h4>
+          <p>Your CV is ready for job matching. You can upload a new one to replace it.</p>
+        {% else %}
+          <svg class="cv-upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="17 8 12 3 7 8"></polyline>
+            <line x1="12" y1="3" x2="12" y2="15"></line>
+          </svg>
+          <h4>Upload your CV</h4>
+          <p>Drag and drop a file here, or click to browse</p>
+        {% endif %}
+        <div class="form-row" style="justify-content:center;margin-top:var(--space-md);">
+          <input type="file" id="file" name="file" accept=".txt,.pdf,.doc,.docx" required style="max-width:300px;" />
+        </div>
+        <button class="btn {% if resume_preview %}btn-secondary{% endif %}" type="submit" style="margin-top:var(--space-md);">
+          {% if resume_preview %}Replace CV{% else %}Upload CV{% endif %}
+        </button>
+      </div>
+    </form>
+    
+    {% if resume_preview %}
+      <div class="cv-preview-section">
+        <div class="cv-preview-header">
+          <h4>Current CV Preview</h4>
+          {% if resume_path %}<span class="cv-path">{{ resume_path }}</span>{% endif %}
+        </div>
+        <textarea class="cv-textarea" readonly>{{ resume_preview }}</textarea>
+      </div>
+    {% endif %}
+  </section>
+
+  <script>
+    // ===================
+    // Session Management
+    // ===================
+    let guestMode = localStorage.getItem('guestMode') === 'true';
+    
+    async function checkSessionStatus() {
+      const overlay = document.getElementById('session-overlay');
+      const dot = document.getElementById('session-dot');
+      const title = document.getElementById('session-title');
+      const message = document.getElementById('session-message');
+      const loginBtn = document.getElementById('login-btn');
+      const logoutBtn = document.getElementById('logout-btn');
+      
+      try {
+        const resp = await fetch('/api/session/status');
+        const status = await resp.json();
+        
+        // Hide loading overlay
+        overlay.classList.add('hidden');
+        
+        if (status.is_valid) {
+          dot.className = 'session-status-dot connected';
+          if (status.profile_name) {
+            title.textContent = 'Connected as ' + status.profile_name;
+          } else {
+            title.textContent = 'Connected to LinkedIn';
+          }
+          message.textContent = 'You are logged in to LinkedIn. Searches will return more results.';
+          loginBtn.style.display = 'none';
+          logoutBtn.style.display = 'inline-flex';
+          logoutBtn.textContent = 'Clear Session';
+        } else if (status.has_session) {
+          dot.className = 'session-status-dot expired';
+          title.textContent = 'Session Expired';
+          message.textContent = 'Your LinkedIn session has expired. Log in again for full access.';
+          loginBtn.style.display = 'inline-flex';
+          logoutBtn.style.display = 'inline-flex';
+        } else {
+          dot.className = 'session-status-dot disconnected';
+          title.textContent = 'Not Connected';
+          message.textContent = 'Connect your LinkedIn account to access more job listings and get better search results.';
+          loginBtn.style.display = 'inline-flex';
+          logoutBtn.style.display = 'none';
+        }
+      } catch (e) {
+        console.error('Error checking session:', e);
+        overlay.classList.add('hidden');
+        dot.className = 'session-status-dot disconnected';
+        title.textContent = 'Connection Error';
+        message.textContent = 'Unable to check session status. Try refreshing the page.';
+      }
+    }
+    
+    async function startLogin() {
+      const loginBtn = document.getElementById('login-btn');
+      const overlay = document.getElementById('session-overlay');
+      const overlayText = overlay.querySelector('.session-loading-text');
+      
+      loginBtn.disabled = true;
+      loginBtn.innerHTML = '<span class="session-spinner" style="width:16px;height:16px;border-width:2px;"></span> Opening browser...';
+      overlay.classList.remove('hidden');
+      overlayText.textContent = 'Waiting for LinkedIn login...';
+      
+      try {
+        const resp = await fetch('/api/session/login', { method: 'POST' });
+        const result = await resp.json();
+        
+        if (result.success) {
+          showNotification('Login successful! Your session has been saved.', 'success');
+          await checkSessionStatus();
+        } else {
+          showNotification('Login failed: ' + result.message, 'error');
+          overlay.classList.add('hidden');
+        }
+      } catch (e) {
+        console.error('Error during login:', e);
+        showNotification('Login failed. Check console for details.', 'error');
+        overlay.classList.add('hidden');
+      } finally {
+        loginBtn.disabled = false;
+        loginBtn.innerHTML = `
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+          </svg>
+          Connect LinkedIn
+        `;
+      }
+    }
+    
+    async function clearSession() {
+      if (!confirm('Clear your LinkedIn session? You will need to log in again.')) {
+        return;
+      }
+      
+      try {
+        await fetch('/api/session/clear', { method: 'POST' });
+        showNotification('Session cleared successfully.', 'info');
+        await checkSessionStatus();
+      } catch (e) {
+        console.error('Error clearing session:', e);
+        showNotification('Failed to clear session.', 'error');
+      }
+    }
+    
+    function toggleGuestMode() {
+      guestMode = !guestMode;
+      localStorage.setItem('guestMode', guestMode);
+      updateGuestToggle();
+    }
+    
+    function updateGuestToggle() {
+      const toggle = document.getElementById('guest-toggle');
+      if (guestMode) {
+        toggle.classList.add('active');
+      } else {
+        toggle.classList.remove('active');
+      }
+    }
+    
+    function showNotification(message, type = 'info') {
+      const notification = document.createElement('div');
+      notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 16px 24px;
+        border-radius: 8px;
+        color: white;
+        font-weight: 500;
+        z-index: 10000;
+        animation: slideIn 0.3s ease;
+        max-width: 400px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      `;
+      
+      if (type === 'success') {
+        notification.style.background = 'var(--accent-success)';
+      } else if (type === 'error') {
+        notification.style.background = 'var(--accent-danger)';
+      } else {
+        notification.style.background = 'var(--accent-primary)';
+      }
+      
+      notification.textContent = message;
+      document.body.appendChild(notification);
+      
+      setTimeout(() => {
+        notification.style.animation = 'slideOut 0.3s ease';
+        setTimeout(() => notification.remove(), 300);
+      }, 4000);
+    }
+    
+    // Scroll to profile section from hash or server-passed section
+    function scrollToProfileSection() {
+      var hash = window.location.hash.slice(1);
+      var section = hash === 'linkedin' || hash === 'cv' ? hash : (typeof window.__profileSection !== 'undefined' ? window.__profileSection : null);
+      if (section) {
+        var el = document.getElementById('section-' + section);
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }
+    
+    // Initialize
+    document.addEventListener('DOMContentLoaded', function() {
+      checkSessionStatus();
+      updateGuestToggle();
+      scrollToProfileSection();
+    });
+  </script>
+  {% if profile_section is defined and profile_section %}
+  <script>window.__profileSection = {{ profile_section|tojson }};</script>
+  {% endif %}
+  
+  <style>
+    @keyframes slideIn {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+    
+    @keyframes slideOut {
+      from { transform: translateX(0); opacity: 1; }
+      to { transform: translateX(100%); opacity: 0; }
+    }
+  </style>
+{% endblock %}

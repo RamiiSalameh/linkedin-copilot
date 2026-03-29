@@ -1,0 +1,3007 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <style>
+    .home-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: var(--space-md);
+      margin-bottom: var(--space-xl);
+    }
+    .home-header h1 {
+      font-size: var(--text-2xl);
+      font-weight: 700;
+      margin: 0;
+    }
+    .llm-indicator {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-sm);
+      padding: var(--space-xs) var(--space-md);
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-full);
+      font-size: var(--text-sm);
+    }
+    .llm-indicator .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+    .llm-indicator.openai .dot { background: var(--accent-success); }
+    .llm-indicator.ollama .dot { background: var(--accent-purple); }
+    
+    #session-indicator {
+      transition: all 0.2s ease;
+    }
+    #session-indicator:hover {
+      border-color: var(--accent-primary);
+      background: rgba(59, 130, 246, 0.1);
+      transform: translateY(-1px);
+    }
+    
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: var(--space-md);
+      align-items: end;
+    }
+    .form-group {
+      display: flex;
+      flex-direction: column;
+    }
+    .form-actions {
+      margin-top: var(--space-lg);
+      display: flex;
+      align-items: center;
+      gap: var(--space-md);
+      flex-wrap: wrap;
+    }
+    
+    .checkbox-group {
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+      padding: var(--space-sm) 0;
+    }
+    .checkbox-group label {
+      margin: 0;
+      font-weight: 400;
+      cursor: pointer;
+    }
+    
+    .help-hint {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-xs);
+      color: var(--text-muted);
+      font-size: var(--text-sm);
+    }
+    .help-hint code {
+      background: var(--bg-elevated);
+      padding: var(--space-xs) var(--space-sm);
+      border-radius: var(--radius-sm);
+      font-size: var(--text-xs);
+    }
+    
+    @media (max-width: 768px) {
+      .form-actions {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .form-actions .btn {
+        width: 100%;
+      }
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+    
+    @keyframes slideIn {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+    
+    @keyframes slideOut {
+      from { transform: translateX(0); opacity: 1; }
+      to { transform: translateX(100%); opacity: 0; }
+    }
+    
+    /* Unified Search Styles */
+    .search-card {
+      padding: var(--space-xl);
+    }
+    
+    .search-tabs {
+      display: flex;
+      gap: var(--space-sm);
+      margin-bottom: var(--space-lg);
+      padding: var(--space-xs);
+      background: var(--bg-primary);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border-subtle);
+    }
+    
+    .search-tab {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-sm);
+      padding: var(--space-sm) var(--space-md);
+      background: transparent;
+      border: none;
+      border-radius: var(--radius-md);
+      color: var(--text-muted);
+      font-weight: 500;
+      font-size: var(--text-sm);
+      cursor: pointer;
+      transition: all 0.25s ease;
+      position: relative;
+      flex: 1;
+      justify-content: center;
+    }
+    
+    .search-tab svg {
+      width: 16px;
+      height: 16px;
+      flex-shrink: 0;
+      transition: transform 0.2s ease;
+    }
+    
+    .search-tab:hover {
+      color: var(--text-primary);
+      background: var(--bg-elevated);
+    }
+    
+    .search-tab:hover svg {
+      transform: scale(1.1);
+    }
+    
+    .search-tab.active {
+      color: white;
+      background: var(--gradient-primary);
+      box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+    }
+    
+    .search-tab.active svg {
+      color: white;
+    }
+    
+    .tab-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 20px;
+      height: 20px;
+      padding: 0 6px;
+      background: rgba(255,255,255,0.2);
+      border-radius: 10px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    
+    .search-tab:not(.active) .tab-badge {
+      background: var(--bg-elevated);
+      color: var(--text-muted);
+    }
+    
+    .tab-label {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 2px;
+    }
+    
+    .tab-subtitle {
+      font-size: 10px;
+      font-weight: 400;
+      opacity: 0.7;
+    }
+    
+    .recommended-badge {
+      position: absolute;
+      top: -8px;
+      right: -8px;
+      background: var(--accent-success);
+      color: white;
+      font-size: 9px;
+      padding: 2px 6px;
+      border-radius: 8px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    .tab-panels {
+      min-height: 180px;
+      position: relative;
+    }
+    
+    .tab-panel {
+      display: none;
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    
+    .tab-panel.active {
+      display: block;
+      opacity: 1;
+      transform: translateY(0);
+      animation: fadeSlideIn 0.25s ease-out;
+    }
+    
+    @keyframes fadeSlideIn {
+      from { 
+        opacity: 0; 
+        transform: translateY(8px); 
+      }
+      to { 
+        opacity: 1; 
+        transform: translateY(0); 
+      }
+    }
+    
+    .tab-desc {
+      color: var(--text-muted);
+      font-size: var(--text-sm);
+      margin-bottom: var(--space-md);
+    }
+    
+    .smart-search-options {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-md);
+    }
+    
+    .keyword-group {
+      padding: var(--space-md);
+      background: var(--bg-primary);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+    }
+    
+    .keyword-group .checkbox-group label {
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+    }
+    
+    .keyword-count {
+      font-weight: 400;
+      color: var(--text-muted);
+      font-size: var(--text-sm);
+    }
+    
+    .keyword-preview {
+      margin-top: var(--space-sm);
+      padding: var(--space-sm);
+      background: var(--bg-base);
+      border-radius: var(--radius-sm);
+      font-size: var(--text-xs);
+      color: var(--text-secondary);
+      line-height: var(--line-height-relaxed);
+      max-height: 120px;
+      overflow-y: auto;
+    }
+    
+    .keyword-preview.empty {
+      color: var(--text-muted);
+      font-style: italic;
+    }
+    
+    .empty-state {
+      text-align: center;
+      padding: var(--space-xl) var(--space-lg);
+      color: var(--text-muted);
+      background: var(--bg-primary);
+      border: 2px dashed var(--border-subtle);
+      border-radius: var(--radius-lg);
+    }
+    
+    .empty-state-icon {
+      width: 48px;
+      height: 48px;
+      margin: 0 auto var(--space-md);
+      color: var(--text-muted);
+      opacity: 0.5;
+    }
+    
+    .empty-state h4 {
+      color: var(--text-primary);
+      font-size: var(--text-base);
+      margin-bottom: var(--space-xs);
+    }
+    
+    .empty-state p {
+      margin-bottom: var(--space-md);
+      font-size: var(--text-sm);
+      line-height: var(--line-height-relaxed);
+    }
+    
+    .empty-state .btn {
+      margin-top: var(--space-sm);
+    }
+    
+    .empty-state .help-hint {
+      display: block;
+      margin-top: var(--space-md);
+    }
+    
+    .filters-section {
+      margin-top: var(--space-lg);
+      padding-top: var(--space-md);
+      border-top: 1px solid var(--border-subtle);
+    }
+    
+    .filters-section summary {
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+      color: var(--accent-primary);
+      font-weight: 500;
+      font-size: var(--text-sm);
+      list-style: none;
+      padding: var(--space-sm) 0;
+    }
+    
+    .filters-section summary::-webkit-details-marker {
+      display: none;
+    }
+    
+    .filters-section summary::before {
+      content: '▸';
+      transition: transform 0.2s;
+    }
+    
+    .filters-section[open] summary::before {
+      transform: rotate(90deg);
+    }
+    
+    .filter-summary {
+      font-weight: 400;
+      color: var(--text-muted);
+    }
+    
+    .filter-count-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 20px;
+      height: 20px;
+      background: var(--accent-primary);
+      color: white;
+      font-size: 11px;
+      font-weight: 600;
+      border-radius: 10px;
+      padding: 0 6px;
+    }
+    
+    .active-filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-xs);
+      margin-top: var(--space-sm);
+    }
+    
+    .filter-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-xs);
+      padding: 4px 12px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-full);
+      font-size: var(--text-xs);
+      color: var(--text-secondary);
+      transition: all 0.2s;
+    }
+    
+    .filter-pill:hover {
+      border-color: var(--accent-primary);
+      color: var(--accent-primary);
+    }
+    
+    .filter-pill .remove-filter {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 14px;
+      height: 14px;
+      background: transparent;
+      border: none;
+      border-radius: 50%;
+      cursor: pointer;
+      color: var(--text-muted);
+      padding: 0;
+      font-size: 14px;
+      line-height: 1;
+    }
+    
+    .filter-pill .remove-filter:hover {
+      background: var(--accent-error);
+      color: white;
+    }
+    
+    .reset-filters-btn {
+      padding: 4px 12px;
+      background: transparent;
+      border: 1px dashed var(--border-subtle);
+      border-radius: var(--radius-full);
+      font-size: var(--text-xs);
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .reset-filters-btn:hover {
+      border-color: var(--accent-error);
+      color: var(--accent-error);
+    }
+    
+    /* Loading States */
+    @keyframes shimmer {
+      0% { background-position: -200% 0; }
+      100% { background-position: 200% 0; }
+    }
+    
+    @keyframes pulseGlow {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4); }
+      50% { box-shadow: 0 0 0 8px rgba(59, 130, 246, 0); }
+    }
+    
+    .skeleton {
+      background: linear-gradient(90deg, var(--bg-elevated) 25%, var(--bg-primary) 50%, var(--bg-elevated) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+      border-radius: var(--radius-md);
+    }
+    
+    .skeleton-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: var(--space-sm);
+    }
+    
+    .skeleton-item {
+      height: 60px;
+      border-radius: var(--radius-md);
+    }
+    
+    .btn.loading {
+      position: relative;
+      color: transparent !important;
+      pointer-events: none;
+    }
+    
+    .btn.loading::after {
+      content: '';
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      top: 50%;
+      left: 50%;
+      margin-top: -10px;
+      margin-left: -10px;
+      border: 2px solid transparent;
+      border-top-color: currentColor;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    .btn-primary.searching {
+      animation: pulseGlow 1.5s infinite;
+    }
+    
+    .generating-text {
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+      color: var(--text-muted);
+      font-size: var(--text-sm);
+      margin-bottom: var(--space-md);
+    }
+    
+    .generating-text .dots {
+      display: inline-flex;
+      gap: 4px;
+    }
+    
+    .generating-text .dot {
+      width: 6px;
+      height: 6px;
+      background: var(--accent-primary);
+      border-radius: 50%;
+      animation: bounce 1.4s infinite ease-in-out both;
+    }
+    
+    .generating-text .dot:nth-child(1) { animation-delay: -0.32s; }
+    .generating-text .dot:nth-child(2) { animation-delay: -0.16s; }
+    
+    @keyframes bounce {
+      0%, 80%, 100% { transform: scale(0); }
+      40% { transform: scale(1); }
+    }
+    
+    /* Validation States */
+    .form-group.has-error input,
+    .form-group.has-error select {
+      border-color: var(--accent-error);
+      box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+    }
+    
+    .form-group.has-success input,
+    .form-group.has-success select {
+      border-color: var(--accent-success);
+    }
+    
+    .validation-message {
+      font-size: var(--text-xs);
+      margin-top: var(--space-xs);
+      display: flex;
+      align-items: center;
+      gap: var(--space-xs);
+    }
+    
+    .validation-message.error {
+      color: var(--accent-error);
+    }
+    
+    .validation-message.success {
+      color: var(--accent-success);
+    }
+    
+    /* Button States */
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    
+    .btn-primary:disabled {
+      background: var(--bg-elevated);
+      color: var(--text-muted);
+      box-shadow: none;
+    }
+    
+    .search-btn-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-xs);
+    }
+    
+    .btn-helper-text {
+      font-size: var(--text-xs);
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: var(--space-xs);
+    }
+    
+    .btn-helper-text svg {
+      width: 14px;
+      height: 14px;
+    }
+    
+    /* Micro-interactions */
+    .card {
+      transition: box-shadow 0.3s ease, transform 0.2s ease;
+    }
+    
+    .card:hover {
+      box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+    }
+    
+    input, select {
+      transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.1s ease;
+    }
+    
+    input:focus, select:focus {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+    }
+    
+    .btn {
+      transition: all 0.2s ease;
+      transform: translateY(0);
+    }
+    
+    .btn:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    
+    .btn:active:not(:disabled) {
+      transform: translateY(0);
+    }
+    
+    .btn-primary:hover:not(:disabled) {
+      box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+    }
+    
+    .checkbox-group {
+      transition: background 0.2s ease;
+      padding: var(--space-sm);
+      margin: calc(-1 * var(--space-sm));
+      border-radius: var(--radius-md);
+    }
+    
+    .checkbox-group:hover {
+      background: var(--bg-elevated);
+    }
+    
+    .checkbox-group input[type="checkbox"] {
+      transition: transform 0.15s ease;
+    }
+    
+    .checkbox-group input[type="checkbox"]:checked {
+      animation: checkPop 0.2s ease;
+    }
+    
+    @keyframes checkPop {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.2); }
+      100% { transform: scale(1); }
+    }
+    
+    .keyword-group {
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+    
+    .keyword-group:hover {
+      border-color: var(--accent-primary);
+      background: rgba(59, 130, 246, 0.02);
+    }
+    
+    .search-query-item {
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    .search-query-item:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    
+    .search-query-item.selected {
+      animation: selectPop 0.3s ease;
+    }
+    
+    @keyframes selectPop {
+      0% { transform: scale(1); }
+      30% { transform: scale(1.02); }
+      100% { transform: scale(1); }
+    }
+    
+    /* Ripple effect on buttons */
+    .btn {
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .btn::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 0;
+      height: 0;
+      background: rgba(255,255,255,0.2);
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      transition: width 0.4s ease, height 0.4s ease;
+    }
+    
+    .btn:active::before {
+      width: 200px;
+      height: 200px;
+    }
+    
+    /* Success animation for notifications */
+    .notification {
+      transform-origin: right;
+    }
+    
+    /* Smooth scrolling */
+    html {
+      scroll-behavior: smooth;
+    }
+    
+    /* Tab content transition */
+    .tab-panel {
+      opacity: 0;
+      transform: translateY(8px);
+      transition: opacity 0.2s ease, transform 0.2s ease;
+    }
+    
+    .tab-panel.active {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    
+    /* LinkedIn session card glow */
+    #session-card {
+      transition: all 0.3s ease;
+    }
+    
+    #session-card:hover {
+      box-shadow: 0 0 20px rgba(10, 102, 194, 0.2);
+    }
+    
+    
+    @keyframes expandIn {
+      from { opacity: 0; max-height: 0; }
+      to { opacity: 1; max-height: 300px; }
+    }
+    
+    /* Focus ring for accessibility */
+    *:focus-visible {
+      outline: 2px solid var(--accent-primary);
+      outline-offset: 2px;
+    }
+    
+    /* Tooltip styles for future use */
+    [data-tooltip] {
+      position: relative;
+    }
+    
+    [data-tooltip]::after {
+      content: attr(data-tooltip);
+      position: absolute;
+      bottom: 100%;
+      left: 50%;
+      transform: translateX(-50%) translateY(-4px);
+      padding: 6px 10px;
+      background: var(--bg-elevated);
+      color: var(--text-primary);
+      font-size: var(--text-xs);
+      border-radius: var(--radius-sm);
+      white-space: nowrap;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease, transform 0.2s ease;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      z-index: 100;
+    }
+    
+    [data-tooltip]:hover::after {
+      opacity: 1;
+      transform: translateX(-50%) translateY(-8px);
+    }
+    
+    .search-actions {
+      margin-top: var(--space-xl);
+    }
+    .search-actions .search-btn-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: var(--space-xs);
+    }
+    
+    .btn-primary {
+      background: var(--gradient-primary);
+      color: white;
+      font-weight: 600;
+    }
+    
+    .btn-large {
+      padding: var(--space-md) var(--space-xl);
+      font-size: var(--text-base);
+    }
+    
+    .btn-gradient {
+      background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-purple) 100%);
+      color: white;
+    }
+    
+    .btn-small {
+      padding: var(--space-xs) var(--space-sm);
+      font-size: var(--text-sm);
+      background: var(--bg-elevated);
+    }
+    
+    .search-status {
+      color: var(--text-muted);
+      font-size: var(--text-sm);
+    }
+    
+    .ai-queries-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: var(--space-md);
+    }
+    
+    .ai-queries-header span {
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+    
+    .searches-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: var(--space-sm);
+      max-height: 250px;
+      overflow-y: auto;
+      padding: var(--space-sm);
+      background: var(--bg-primary);
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-subtle);
+      margin-bottom: var(--space-md);
+    }
+    
+    .search-query-item {
+      padding: var(--space-sm) var(--space-md);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+    }
+    
+    .search-query-item:hover {
+      border-color: var(--accent-primary);
+    }
+    
+    .search-query-item.selected {
+      background: rgba(59, 130, 246, 0.12);
+      border-color: rgba(59, 130, 246, 0.5);
+      box-shadow: inset 0 0 0 1px rgba(59, 130, 246, 0.25);
+    }
+    
+    .search-query-item .query-text {
+      flex: 1;
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+    
+    .search-query-item .query-meta {
+      font-size: var(--text-xs);
+    }
+    
+    .query-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 8px;
+      border-radius: var(--radius-full);
+      font-size: 11px;
+      line-height: 1;
+      border: 1px solid var(--border-default);
+      background: var(--bg-secondary);
+      color: var(--text-secondary);
+      margin-top: 4px;
+    }
+    
+    .unified-query-pool {
+      display: flex;
+      flex-wrap: wrap;
+      align-content: flex-start;
+      gap: 8px;
+      max-height: 190px;
+      overflow-y: auto;
+      padding: 10px;
+      background: rgba(15, 23, 42, 0.55);
+    }
+    
+    .query-chip {
+      border: 1px solid var(--border-default);
+      border-radius: var(--radius-full);
+      background: linear-gradient(180deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.95) 100%);
+      color: var(--text-primary);
+      font-size: var(--text-xs);
+      line-height: 1.2;
+      padding: 6px 10px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      transition: border-color .18s ease, box-shadow .18s ease, transform .12s ease, background .18s ease;
+      max-width: 280px;
+    }
+    
+    .query-chip:hover {
+      border-color: rgba(148, 163, 184, 0.8);
+      transform: translateY(-1px);
+    }
+    
+    .query-chip.is-selected {
+      border-color: rgba(96, 165, 250, 0.8);
+      box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.25), 0 8px 18px rgba(2, 6, 23, 0.35);
+      background: linear-gradient(180deg, rgba(30, 58, 138, 0.55) 0%, rgba(15, 23, 42, 0.95) 100%);
+    }
+    
+    .chip-check {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      flex: 0 0 14px;
+      border: 1px solid rgba(148, 163, 184, 0.7);
+      background: transparent;
+      position: relative;
+    }
+    
+    .query-chip.is-selected .chip-check {
+      border-color: rgba(96, 165, 250, 0.95);
+      background: rgba(96, 165, 250, 0.18);
+    }
+    
+    .query-chip.is-selected .chip-check::after {
+      content: '';
+      position: absolute;
+      width: 5px;
+      height: 8px;
+      border: solid #bfdbfe;
+      border-width: 0 2px 2px 0;
+      transform: rotate(45deg);
+      left: 4px;
+      top: 1px;
+    }
+    
+    .chip-text {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      min-width: 0;
+    }
+    
+    .chip-label {
+      font-weight: 500;
+      color: var(--text-primary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 170px;
+    }
+    
+    .chip-source {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      padding: 1px 6px;
+      border-radius: var(--radius-full);
+      border: 1px solid rgba(148, 163, 184, 0.45);
+      color: var(--text-secondary);
+      font-size: 10px;
+      white-space: nowrap;
+    }
+    
+    .chip-remove {
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 0;
+      font-size: 13px;
+      line-height: 1;
+    }
+    
+    .chip-remove:hover {
+      color: var(--text-primary);
+    }
+    
+    @media (max-width: 768px) {
+      .search-tabs {
+        flex-wrap: wrap;
+      }
+      .search-tab {
+        flex: 1;
+        text-align: center;
+        padding: var(--space-sm);
+        font-size: var(--text-sm);
+      }
+      .search-actions {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .btn-large {
+        width: 100%;
+      }
+    }
+    
+    /* Explore Tab Styles */
+    .explore-dashboard {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-md);
+    }
+    
+    .explore-status-card {
+      background: var(--bg-primary);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: var(--space-lg);
+    }
+    
+    .explore-status-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: var(--space-md);
+    }
+    
+    .explore-status-indicator {
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+      font-weight: 600;
+    }
+    
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--text-muted);
+    }
+    
+    .status-dot.idle { background: var(--text-muted); }
+    .status-dot.running { 
+      background: var(--accent-success);
+      animation: pulse 1.5s infinite;
+    }
+    .status-dot.paused { background: var(--accent-warning); }
+    .status-dot.completed { background: var(--accent-primary); }
+    .status-dot.error { background: var(--accent-error); }
+    
+    .explore-timer {
+      font-family: var(--font-mono);
+      font-size: var(--text-sm);
+      color: var(--text-muted);
+    }
+    
+    .progress-bar-container {
+      height: 8px;
+      background: var(--bg-elevated);
+      border-radius: var(--radius-full);
+      overflow: hidden;
+      margin-bottom: var(--space-sm);
+    }
+    
+    .progress-bar {
+      height: 100%;
+      background: var(--gradient-primary);
+      border-radius: var(--radius-full);
+      transition: width 0.3s ease;
+    }
+    
+    .progress-stats {
+      display: flex;
+      justify-content: space-between;
+      font-size: var(--text-sm);
+      color: var(--text-secondary);
+    }
+    
+    .explore-current {
+      padding: var(--space-sm) var(--space-md);
+      background: var(--bg-elevated);
+      border-radius: var(--radius-md);
+      font-size: var(--text-sm);
+    }
+    
+    .current-label {
+      color: var(--text-muted);
+      margin-right: var(--space-sm);
+    }
+    
+    .current-query {
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+    
+    .explore-insights {
+      background: var(--bg-primary);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: var(--space-lg);
+    }
+    
+    .explore-insights h4 {
+      margin: 0 0 var(--space-md) 0;
+      font-size: var(--text-base);
+      font-weight: 600;
+    }
+    
+    .insight-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: var(--space-md);
+    }
+    
+    .insight-card {
+      text-align: center;
+      padding: var(--space-md);
+      background: var(--bg-elevated);
+      border-radius: var(--radius-md);
+    }
+    
+    .insight-value {
+      font-size: var(--text-2xl);
+      font-weight: 700;
+      color: var(--accent-primary);
+    }
+    
+    .insight-label {
+      font-size: var(--text-xs);
+      color: var(--text-muted);
+      margin-top: var(--space-xs);
+    }
+    
+    .top-queries-list {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-xs);
+    }
+    
+    .top-query-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: var(--space-sm) var(--space-md);
+      background: var(--bg-elevated);
+      border-radius: var(--radius-sm);
+      font-size: var(--text-sm);
+    }
+    
+    .top-query-item .query-name {
+      font-weight: 500;
+    }
+    
+    .top-query-item .query-score {
+      color: var(--accent-success);
+      font-weight: 600;
+    }
+    
+    .explore-config {
+      background: var(--bg-primary);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: var(--space-lg);
+      margin-top: var(--space-md);
+    }
+    
+    .explore-strategies {
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .strategy-checkbox {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-xs);
+      padding: var(--space-xs) var(--space-sm);
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      font-size: var(--text-sm);
+      transition: all 0.2s ease;
+    }
+    
+    .strategy-checkbox:hover {
+      border-color: var(--accent-primary);
+    }
+    
+    .strategy-checkbox:has(input:checked) {
+      background: rgba(59, 130, 246, 0.1);
+      border-color: var(--accent-primary);
+    }
+    
+    .strategy-checkbox input {
+      accent-color: var(--accent-primary);
+    }
+    
+    .explore-actions {
+      display: flex;
+      gap: var(--space-md);
+      align-items: center;
+    }
+    
+    .btn-gradient {
+      background: var(--gradient-primary);
+      color: white;
+      border: none;
+    }
+    
+    .btn-gradient:hover {
+      opacity: 0.9;
+      transform: translateY(-1px);
+    }
+    
+    .btn-danger {
+      background: var(--accent-error);
+      color: white;
+      border: none;
+    }
+    
+    .btn-danger:hover {
+      opacity: 0.9;
+    }
+    
+    @media (max-width: 768px) {
+      .insight-grid {
+        grid-template-columns: 1fr;
+      }
+      .explore-actions {
+        flex-direction: column;
+      }
+      .explore-actions .btn {
+        width: 100%;
+      }
+    }
+    
+    /* Careers Tab Styles */
+    .careers-companies-list {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-sm);
+      max-height: 400px;
+      overflow-y: auto;
+    }
+    
+    .careers-company-card {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      padding: var(--space-md);
+      background: var(--bg-primary);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      transition: all 0.2s ease;
+    }
+    .careers-company-card .company-card-row {
+      display: flex;
+      align-items: center;
+      gap: var(--space-md);
+    }
+    
+    .careers-company-card:hover {
+      border-color: var(--accent-primary);
+      background: rgba(59, 130, 246, 0.02);
+    }
+    
+    .careers-company-card.disabled {
+      opacity: 0.5;
+    }
+    
+    .company-logo {
+      width: 40px;
+      height: 40px;
+      border-radius: var(--radius-sm);
+      object-fit: contain;
+      background: var(--bg-elevated);
+    }
+    
+    .company-logo-placeholder {
+      width: 40px;
+      height: 40px;
+      border-radius: var(--radius-sm);
+      background: var(--gradient-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: 700;
+      font-size: var(--text-lg);
+    }
+    
+    .company-info {
+      flex: 1;
+      min-width: 0;
+    }
+    
+    .company-name {
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 2px;
+    }
+    
+    .company-meta {
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+      font-size: var(--text-xs);
+      color: var(--text-muted);
+    }
+    
+    .ats-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 8px;
+      border-radius: var(--radius-full);
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+    
+    .ats-badge.greenhouse {
+      background: rgba(46, 204, 113, 0.15);
+      color: #2ecc71;
+    }
+    
+    .ats-badge.lever {
+      background: rgba(139, 92, 246, 0.15);
+      color: #a78bfa;
+    }
+    
+    .company-stats {
+      display: flex;
+      align-items: center;
+      gap: var(--space-md);
+      font-size: var(--text-sm);
+    }
+    
+    .company-jobs-count {
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+    
+    .company-last-scraped {
+      color: var(--text-muted);
+      font-size: var(--text-xs);
+    }
+    
+    .company-actions {
+      display: flex;
+      align-items: center;
+      gap: var(--space-xs);
+    }
+    
+    .company-action-btn {
+      padding: var(--space-xs);
+      background: transparent;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    
+    .company-action-btn:hover {
+      background: var(--bg-elevated);
+      color: var(--text-primary);
+      border-color: var(--accent-primary);
+    }
+    
+    .company-action-btn.danger:hover {
+      background: rgba(239, 68, 68, 0.1);
+      color: var(--accent-error);
+      border-color: var(--accent-error);
+    }
+    
+    .company-action-btn svg {
+      width: 16px;
+      height: 16px;
+    }
+    
+    .careers-loading {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-sm);
+      padding: var(--space-xl);
+      color: var(--text-muted);
+    }
+    
+    .company-row-progress {
+      width: 100%;
+      margin-top: var(--space-sm);
+      padding-top: var(--space-sm);
+      border-top: 1px solid var(--border-subtle);
+      display: none;
+    }
+    .company-row-progress[aria-busy="true"] {
+      display: block;
+    }
+    .company-row-progress .company-row-progress-label {
+      font-size: var(--text-xs);
+      color: var(--text-muted);
+      margin-bottom: var(--space-xs);
+    }
+    .company-row-progress .progress-bar-container {
+      margin-bottom: 0;
+      height: 6px;
+    }
+    .company-row-progress-bar.indeterminate {
+      width: 40%;
+      animation: company-row-progress-indeterminate 1.2s ease-in-out infinite;
+    }
+    @keyframes company-row-progress-indeterminate {
+      0% { transform: translateX(-100%); }
+      100% { transform: translateX(350%); }
+    }
+  </style>
+
+  <div class="home-header animate-slide-up">
+    <h1>Job Search</h1>
+    <div style="display:flex;gap:var(--space-md);align-items:center;">
+      <div class="llm-indicator {% if 'OpenAI' in llm_provider %}openai{% else %}ollama{% endif %}">
+        <span class="dot"></span>
+        <span>{{ llm_provider }}</span>
+      </div>
+      <div id="session-indicator" class="llm-indicator" style="opacity:0.7;">
+        <span class="dot" style="background:var(--text-muted);"></span>
+        <span>Checking session...</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Unified Search Section -->
+  <section class="card search-card animate-slide-up">
+    <h2 style="margin-bottom:var(--space-md);">Find Jobs</h2>
+    
+    <!-- Tab Navigation -->
+    <div class="search-tabs">
+      <button class="search-tab {% if search_tab == 'search' %}active{% endif %}" data-tab="search" onclick="switchTab('search')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"></circle>
+          <path d="m21 21-4.35-4.35"></path>
+        </svg>
+        <span>Search</span>
+      </button>
+      <button class="search-tab {% if search_tab == 'explore' %}active{% endif %}" data-tab="explore" onclick="switchTab('explore')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"></circle>
+          <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon>
+        </svg>
+        <span>Explore</span>
+        <span class="tab-badge" id="explore-tab-badge" style="display:none;">0</span>
+      </button>
+      <button class="search-tab {% if search_tab == 'careers' %}active{% endif %}" data-tab="careers" onclick="switchTab('careers')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+          <polyline points="9 22 9 12 15 12 15 22"></polyline>
+        </svg>
+        <span>Careers</span>
+        <span class="tab-badge" id="careers-tab-badge" title="Tracked companies" style="display:none;">0</span>
+      </button>
+    </div>
+    
+    <!-- Tab Panels -->
+    <div class="tab-panels">
+      <!-- Search Tab -->
+      <div id="tab-search" class="tab-panel {% if search_tab == 'search' %}active{% endif %}">
+        <p class="tab-desc">Enter keywords manually to search for specific positions.</p>
+        <div class="form-grid">
+          <div class="form-group" id="keywords-group">
+            <label for="keywords">Keywords</label>
+            <input
+              type="text"
+              id="keywords"
+              list="search-autocomplete-list"
+              placeholder="e.g., python developer, backend engineer"
+              value="{{ last_search.keywords if last_search and last_search.keywords is not none else 'python backend' }}"
+              oninput="validateQuickSearch()"
+            />
+            <datalist id="search-autocomplete-list"></datalist>
+            <span id="keywords-validation" class="validation-message"></span>
+          </div>
+          <div class="form-group" id="location-group">
+            <label for="location">Location</label>
+            <input
+              type="text"
+              id="location"
+              placeholder="e.g., Israel, Remote"
+              value="{{ last_search.location if last_search and last_search.location is not none else 'Israel' }}"
+              oninput="validateQuickSearch()"
+            />
+            <span id="location-validation" class="validation-message"></span>
+          </div>
+        </div>
+        <div style="margin-top:var(--space-md);display:flex;gap:var(--space-sm);align-items:center;flex-wrap:wrap;">
+          <button type="button" class="btn btn-small" onclick="addUserQueryFromInput()">Add Query</button>
+          <button type="button" class="btn btn-small" onclick="refreshUnifiedSuggestions()">↻ Refresh AI suggestions</button>
+          <span id="unified-summary" class="muted" style="font-size:var(--text-xs);"></span>
+        </div>
+        <div id="unified-query-pool" class="searches-grid unified-query-pool" style="margin-top:var(--space-sm);"></div>
+      </div>
+      
+      <!-- Explore Tab -->
+      <div id="tab-explore" class="tab-panel {% if search_tab == 'explore' %}active{% endif %}">
+        <p class="tab-desc">Continuously discover jobs using AI-powered search strategies that learn from your results.</p>
+        
+        <!-- Explore Status Dashboard -->
+        <div id="explore-dashboard" class="explore-dashboard">
+          <div class="explore-status-card" id="explore-status-card">
+            <div class="explore-status-header">
+              <div class="explore-status-indicator">
+                <span class="status-dot" id="explore-status-dot"></span>
+                <span id="explore-status-text">Ready to Explore</span>
+              </div>
+              <div id="explore-timer" class="explore-timer"></div>
+            </div>
+            
+            <div class="explore-progress-wrapper" style="margin-bottom:var(--space-md);">
+              {% with id="job-progress-explore", bar_id="job-progress-explore-bar", title="Exploring...", count_text="0/0 searches", detail_id="job-progress-explore-jobs", show_stop=none %}
+                {% include "partials/job_progress.html" %}
+              {% endwith %}
+            </div>
+            
+            <div class="explore-current" id="explore-current" style="display:none;">
+              <span class="current-label">Currently searching:</span>
+              <span class="current-query" id="explore-current-query">-</span>
+            </div>
+          </div>
+          
+          <!-- Exploration Insights -->
+          <div id="explore-insights" class="explore-insights" style="display:none;">
+            <h4>Search Insights</h4>
+            <div class="insight-grid">
+              <div class="insight-card">
+                <div class="insight-value" id="insight-total-searches">0</div>
+                <div class="insight-label">Total Searches</div>
+              </div>
+              <div class="insight-card">
+                <div class="insight-value" id="insight-jobs-found">0</div>
+                <div class="insight-label">Jobs Found</div>
+              </div>
+              <div class="insight-card">
+                <div class="insight-value" id="insight-effectiveness">0%</div>
+                <div class="insight-label">Avg. Effectiveness</div>
+              </div>
+            </div>
+            <div id="top-queries-section" style="margin-top:var(--space-md);display:none;">
+              <h5 style="font-size:var(--text-sm);color:var(--text-secondary);margin-bottom:var(--space-xs);">Top Performing Queries</h5>
+              <div id="top-queries-list" class="top-queries-list"></div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Explore Configuration -->
+        <div class="explore-config" id="explore-config">
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="explore_intensity">Intensity</label>
+              <select id="explore_intensity">
+                <option value="slow">Slow (~10 searches/hr)</option>
+                <option value="medium" selected>Medium (~20 searches/hr)</option>
+                <option value="fast">Fast (~40 searches/hr)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="explore_max_searches">Max Searches</label>
+              <input type="number" id="explore_max_searches" value="50" min="10" max="500" />
+            </div>
+            <div class="form-group">
+              <label for="explore_locations">Locations</label>
+              <input type="text" id="explore_locations" 
+                     placeholder="Comma-separated locations"
+                     value="{{ profile.preferred_locations | select('ne', 'Remote') | select('ne', 'Hybrid') | list | join(', ') if profile and profile.preferred_locations else 'Israel' }}" />
+            </div>
+          </div>
+          
+          <div class="explore-strategies" style="margin-top:var(--space-md);">
+            <label style="font-weight:500;margin-bottom:var(--space-sm);display:block;">Strategies to Use</label>
+            <div style="display:flex;flex-wrap:wrap;gap:var(--space-sm);">
+              <label class="strategy-checkbox">
+                <input type="checkbox" value="profile" checked /> Profile-based
+              </label>
+              <label class="strategy-checkbox">
+                <input type="checkbox" value="skill_combo" checked /> Skill Combinations
+              </label>
+              <label class="strategy-checkbox">
+                <input type="checkbox" value="domain" checked /> Domain Expansion
+              </label>
+              <label class="strategy-checkbox">
+                <input type="checkbox" value="technology" checked /> Technology Focus
+              </label>
+              <label class="strategy-checkbox">
+                <input type="checkbox" value="learning" checked /> AI Learning
+              </label>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Explore Actions -->
+        <div class="explore-actions" style="margin-top:var(--space-lg);">
+          <button id="explore-start-btn" class="btn btn-gradient" onclick="startExploration()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;margin-right:8px;">
+              <polygon points="5 3 19 12 5 21 5 3"></polygon>
+            </svg>
+            Start Exploration
+          </button>
+          <button id="explore-pause-btn" class="btn" onclick="pauseExploration()" style="display:none;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;margin-right:8px;">
+              <rect x="6" y="4" width="4" height="16"></rect>
+              <rect x="14" y="4" width="4" height="16"></rect>
+            </svg>
+            Pause
+          </button>
+          <button id="explore-resume-btn" class="btn btn-gradient" onclick="resumeExploration()" style="display:none;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;margin-right:8px;">
+              <polygon points="5 3 19 12 5 21 5 3"></polygon>
+            </svg>
+            Resume
+          </button>
+          <button id="explore-stop-btn" class="btn btn-danger" onclick="stopExploration()" style="display:none;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;margin-right:8px;">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+            </svg>
+            Stop
+          </button>
+        </div>
+      </div>
+      
+      <!-- Careers Tab (Company Career Sites) -->
+      <div id="tab-careers" class="tab-panel {% if search_tab == 'careers' %}active{% endif %}">
+        <p class="tab-desc">Pull jobs directly from company career sites (Greenhouse, Lever, Workday). Add companies to track and scrape their latest openings.</p>
+        
+        <!-- Add Company Form -->
+        <div class="careers-add-company" style="margin-bottom:var(--space-lg);">
+          <div class="form-grid" style="align-items:end;">
+            <div class="form-group" style="flex:2;">
+              <label for="careers_url">Company Careers URL</label>
+              <input 
+                type="text" 
+                id="careers_url" 
+                placeholder="e.g. boards.greenhouse.io/stripe, jobs.lever.co/netflix, company.wd3.myworkdayjobs.com, careers.company.com"
+                oninput="validateCareersUrl()"
+              />
+              <span id="careers-url-validation" class="validation-message"></span>
+            </div>
+            <div class="form-group" style="flex:1;">
+              <label for="careers_company_name">Company Name (optional)</label>
+              <input type="text" id="careers_company_name" placeholder="Auto-detected" />
+            </div>
+            <button id="add-company-btn" class="btn btn-gradient" onclick="addCompany()" disabled style="height:42px;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;margin-right:6px;">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="16"></line>
+                <line x1="8" y1="12" x2="16" y2="12"></line>
+              </svg>
+              Add Company
+            </button>
+          </div>
+        </div>
+
+        <!-- Companies List -->
+        <div class="careers-companies-section">
+          <div class="careers-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-md);">
+            <h4 style="margin:0;color:var(--text-secondary);">Tracked Companies</h4>
+            <div style="display:flex;gap:var(--space-sm);align-items:center;">
+              <a href="/careers/review" class="btn btn-small" style="text-decoration:none;" id="careers-review-link">Review pulled jobs</a>
+              <button id="scrape-all-btn" class="btn btn-small" onclick="scrapeAllCompanies()" style="display:none;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;margin-right:4px;">
+                  <path d="M21 12a9 9 0 1 1-6.219-8.56"></path>
+                </svg>
+                Scrape All
+              </button>
+              <button class="btn btn-small" onclick="refreshCompanies()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;">
+                  <path d="M21 12a9 9 0 1 1-6.219-8.56"></path>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Location filter for scraping (used by Scrape / Scrape All) -->
+          <div class="form-group" style="margin-bottom:var(--space-md);">
+            <label for="careers_location_filter">Location filter for scraping (optional)</label>
+            <input
+              type="text"
+              id="careers_location_filter"
+              placeholder="e.g. Israel, Remote, Tel Aviv"
+              value="{{ profile.preferred_locations | join(', ') if profile and profile.preferred_locations else '' }}"
+            />
+            <p class="help-text" style="font-size:var(--text-xs);color:var(--text-muted);margin-top:var(--space-xs);">Applied when you run Scrape or Scrape All. For Workday, the filter is applied on the career site when possible so only matching jobs are fetched. For other ATS, only matching jobs are saved. You can also paste a Workday job list URL after selecting a location on the site. Leave empty to save all.</p>
+          </div>
+
+          <div id="careers-companies-list" class="careers-companies-list">
+            <div class="careers-loading" id="careers-loading">
+              <span class="dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span>
+              Loading companies...
+            </div>
+            <div id="careers-empty" class="empty-state" style="display:none;">
+              <svg class="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                <polyline points="9 22 9 12 15 12 15 22"></polyline>
+              </svg>
+              <h4>No Companies Added</h4>
+              <p>Add company career page URLs above to start tracking jobs from their sites.</p>
+              <p style="font-size:var(--text-xs);color:var(--text-muted);">Supported: Greenhouse, Lever, Workday (e.g. company.wd3.myworkdayjobs.com or careers.company.com)</p>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Scraping Progress (unified component) -->
+        <div style="margin-top:var(--space-lg);">
+          {% with id="job-progress-careers", bar_id="job-progress-careers-bar", title="Scraping companies...", count_text="0/0 companies", detail_id="job-progress-careers-jobs", stop_onclick="stopCareersScrape()" %}
+            {% include "partials/job_progress.html" %}
+          {% endwith %}
+        </div>
+      </div>
+    </div>
+    
+    <!-- Shared Filters (Collapsible) -->
+    <details class="filters-section" id="filters-details">
+      <summary>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px;">
+          <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+        </svg>
+        <span>Filters</span>
+        <span class="filter-count-badge" id="filter-count" title="Active filters" style="display:none;">0</span>
+      </summary>
+      
+      <!-- Active filter pills (shown when collapsed) -->
+      <div id="active-filters" class="active-filters"></div>
+      
+      <div class="form-grid" style="margin-top:var(--space-md);">
+        <div class="form-group">
+          <div class="checkbox-group">
+            <input type="checkbox" id="easy_apply" {% if last_search and last_search.easy_apply %}checked{% endif %} onchange="updateFilters()" />
+            <label for="easy_apply">Easy Apply only</label>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="date_posted">Date Posted</label>
+          <select id="date_posted" onchange="updateFilters()">
+            <option value="">Any time</option>
+            <option value="24h">Past 24 hours</option>
+            <option value="week" selected>Past week</option>
+            <option value="month">Past month</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="experience_level">Experience Level</label>
+          <select id="experience_level" onchange="updateFilters()">
+            <option value="">Any level</option>
+            <option value="entry">Entry level</option>
+            <option value="associate">Associate</option>
+            <option value="mid_senior" selected>Mid-Senior level</option>
+            <option value="director">Director</option>
+            <option value="executive">Executive</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="remote">Work Type</label>
+          <select id="remote" onchange="updateFilters()">
+            <option value="">Any</option>
+            <option value="onsite">On-site</option>
+            <option value="remote">Remote</option>
+            <option value="hybrid">Hybrid</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="job_type">Job Type</label>
+          <select id="job_type" onchange="updateFilters()">
+            <option value="">Any</option>
+            <option value="full_time" selected>Full-time</option>
+            <option value="part_time">Part-time</option>
+            <option value="contract">Contract</option>
+          </select>
+        </div>
+      </div>
+    </details>
+    
+    <!-- Search Button -->
+    <div class="search-actions">
+      <div class="search-btn-wrapper">
+        <button id="search-btn" class="btn btn-primary btn-large" onclick="runSearch()">
+          Search Jobs
+        </button>
+        <span id="search-helper" class="btn-helper-text"></span>
+      </div>
+      <span id="search-status" class="search-status"></span>
+    </div>
+  </section>
+
+  <script>
+    // ===================
+    // Session Management
+    // ===================
+    async function checkSessionStatus() {
+      const indicator = document.getElementById('session-indicator');
+      
+      try {
+        const resp = await fetch('/api/session/status');
+        const status = await resp.json();
+        
+        if (status.is_valid) {
+          const displayName = status.profile_name || 'Logged In';
+          indicator.innerHTML = '<span class="dot" style="background:var(--accent-success);"></span><span>' + escapeHtml(displayName) + '</span>';
+          indicator.style.opacity = '1';
+          indicator.style.cursor = 'pointer';
+          indicator.onclick = () => window.location.href = '/profile';
+          indicator.title = status.profile_name ? 'Connected as ' + status.profile_name + ' - Click to manage' : 'Connected to LinkedIn - Click to manage';
+        } else if (status.has_session) {
+          indicator.innerHTML = '<span class="dot" style="background:var(--accent-warning);"></span><span>Session Expired</span>';
+          indicator.style.opacity = '1';
+          indicator.style.cursor = 'pointer';
+          indicator.onclick = () => window.location.href = '/profile';
+          indicator.title = 'Session expired - Click to reconnect';
+        } else {
+          indicator.innerHTML = '<span class="dot" style="background:var(--text-muted);"></span><span>Guest Mode</span>';
+          indicator.style.opacity = '0.7';
+          indicator.style.cursor = 'pointer';
+          indicator.onclick = () => window.location.href = '/profile';
+          indicator.title = 'Not connected - Click to log in';
+        }
+      } catch (e) {
+        console.error('Error checking session:', e);
+        indicator.innerHTML = '<span class="dot" style="background:var(--text-muted);"></span><span>Guest Mode</span>';
+        indicator.style.cursor = 'pointer';
+        indicator.onclick = () => window.location.href = '/profile';
+      }
+    }
+    
+    function showNotification(message, type = 'info') {
+      const notification = document.createElement('div');
+      notification.className = 'notification notification-' + type;
+      notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 16px 24px;
+        border-radius: 8px;
+        color: white;
+        font-weight: 500;
+        z-index: 10000;
+        animation: slideIn 0.3s ease;
+        max-width: 400px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      `;
+      
+      if (type === 'success') {
+        notification.style.background = 'var(--accent-success, #22c55e)';
+      } else if (type === 'error') {
+        notification.style.background = 'var(--accent-error, #ef4444)';
+      } else {
+        notification.style.background = 'var(--accent-primary, #3b82f6)';
+      }
+      
+      notification.textContent = message;
+      document.body.appendChild(notification);
+      
+      setTimeout(() => {
+        notification.style.animation = 'slideOut 0.3s ease';
+        setTimeout(() => notification.remove(), 300);
+      }, 4000);
+    }
+    
+    // ===================
+    // Tab Management
+    // ===================
+    let activeTab = '{{ search_tab }}';
+    
+    function switchTab(tabId) {
+      activeTab = tabId;
+      
+      // Update tab buttons
+      document.querySelectorAll('.search-tab').forEach(tab => {
+        tab.classList.toggle('active', tab.dataset.tab === tabId);
+      });
+      
+      // Update tab panels
+      document.querySelectorAll('.tab-panel').forEach(panel => {
+        panel.classList.toggle('active', panel.id === 'tab-' + tabId);
+      });
+      
+      // Keep URL in sync for side nav and deep-linking
+      var url = window.location.pathname + '?tab=' + tabId;
+      if (window.location.search !== ('?tab=' + tabId)) {
+        history.replaceState(null, '', url);
+      }
+      
+      // Update search button text based on tab
+      updateSearchButton();
+      // If switching to Careers tab, re-check if a scrape is running (e.g. started before user left the page)
+      if (tabId === 'careers') checkCareersScrapeStatus();
+    }
+    
+    function updateSearchButton() {
+      const btn = document.getElementById('search-btn');
+      const helper = document.getElementById('search-helper');
+      const status = document.getElementById('search-status');
+      const valid = isSearchValid();
+      
+      btn.disabled = !valid;
+      
+      if (activeTab === 'search') {
+        const keywords = document.getElementById('keywords').value.trim();
+        const location = document.getElementById('location').value.trim();
+        
+        if (!keywords && !location) {
+          btn.textContent = 'Search Jobs';
+          helper.innerHTML = '';
+        } else if (!keywords) {
+          btn.textContent = 'Search Jobs';
+          helper.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg> Enter keywords to search';
+        } else if (!location) {
+          btn.textContent = 'Search Jobs';
+          helper.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg> Enter a location';
+        } else {
+          btn.textContent = 'Search Jobs';
+          helper.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> Ready to search';
+          helper.style.color = 'var(--accent-success)';
+        }
+        status.textContent = '';
+      } else if (activeTab === 'careers') {
+        btn.style.display = 'none';
+        helper.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg> Add companies and scrape their career pages';
+        helper.style.color = 'var(--text-muted)';
+        status.textContent = '';
+        return;
+      }
+      
+      btn.style.display = 'inline-flex';
+    }
+    
+    // ===================
+    // Unified Search
+    // ===================
+    let unifiedSuggestions = [];
+    let unifiedSelected = new Set();
+    let userQueries = [];
+
+    async function loadUnifiedAutocomplete() {
+      try {
+        const resp = await fetch('/api/search/autocomplete');
+        const data = await resp.json();
+        const list = document.getElementById('search-autocomplete-list');
+        if (!list) return;
+        list.innerHTML = '';
+        (data.suggestions || []).forEach(s => {
+          const opt = document.createElement('option');
+          opt.value = s;
+          list.appendChild(opt);
+        });
+      } catch (e) {
+        console.error('Failed to load autocomplete:', e);
+      }
+    }
+
+    async function loadUnifiedSuggestions(forceRefresh = false) {
+      try {
+        const url = forceRefresh ? '/api/search/suggestions/refresh' : '/api/search/suggestions';
+        const resp = await fetch(url, { method: forceRefresh ? 'POST' : 'GET' });
+        const data = await resp.json();
+        if (data.error) {
+          showNotification(data.error, 'error');
+          return;
+        }
+        unifiedSuggestions = data.searches || [];
+        unifiedSelected.clear();
+        unifiedSuggestions.forEach((_, idx) => unifiedSelected.add(idx));
+        renderUnifiedQueryPool();
+      } catch (e) {
+        console.error('Failed to load suggestions:', e);
+      }
+    }
+
+    function addUserQueryFromInput() {
+      const keywords = document.getElementById('keywords').value.trim();
+      if (!keywords) return;
+      if (!userQueries.includes(keywords)) userQueries.push(keywords);
+      renderUnifiedQueryPool();
+    }
+
+    function toggleUnifiedSuggestion(index) {
+      if (unifiedSelected.has(index)) unifiedSelected.delete(index);
+      else unifiedSelected.add(index);
+      renderUnifiedQueryPool();
+    }
+
+    function removeUserQuery(index) {
+      userQueries.splice(index, 1);
+      renderUnifiedQueryPool();
+    }
+
+    function renderUnifiedQueryPool() {
+      const pool = document.getElementById('unified-query-pool');
+      const summary = document.getElementById('unified-summary');
+      if (!pool || !summary) return;
+      let html = '';
+      userQueries.forEach((q, idx) => {
+        html += `
+          <div class="query-chip is-selected" role="group">
+            <span class="chip-check"></span>
+            <span class="chip-text">
+              <span class="chip-label">${escapeHtml(q)}</span>
+              <span class="chip-source">you</span>
+            </span>
+            <button class="chip-remove" onclick="event.stopPropagation();removeUserQuery(${idx})" type="button" aria-label="Remove query">&times;</button>
+          </div>
+        `;
+      });
+      unifiedSuggestions.forEach((s, idx) => {
+        const isSelected = unifiedSelected.has(idx);
+        html += `
+          <button class="query-chip ${isSelected ? 'is-selected' : ''}" type="button" onclick="toggleUnifiedSuggestion(${idx})">
+            <span class="chip-check"></span>
+            <span class="chip-text">
+              <span class="chip-label">${escapeHtml(s.query || '')}</span>
+              <span class="chip-source">✨ ${escapeHtml(s.category || 'ai')}</span>
+            </span>
+          </button>
+        `;
+      });
+      pool.innerHTML = html;
+      const selectedAi = unifiedSelected.size;
+      const locations = (document.getElementById('location')?.value || 'Israel')
+        .split(',')
+        .map(s => s.trim())
+        .filter(Boolean).length || 1;
+      summary.textContent = `${userQueries.length} your queries + ${selectedAi} AI selected · ${locations} locations`;
+      updateSearchButton();
+    }
+
+    async function refreshUnifiedSuggestions() {
+      await loadUnifiedSuggestions(true);
+    }
+
+    async function runSearch() {
+      const btn = document.getElementById('search-btn');
+      const status = document.getElementById('search-status');
+      const originalText = btn.textContent;
+      
+      // Show loading state
+      btn.innerHTML = `<span class="btn-spinner"></span> Searching...`;
+      btn.disabled = true;
+      btn.classList.add('searching');
+      status.textContent = 'Connecting to LinkedIn...';
+      
+      // Get shared filter values
+      const filters = {
+        easy_apply: document.getElementById('easy_apply').checked,
+        date_posted: document.getElementById('date_posted').value,
+        experience_level: document.getElementById('experience_level').value,
+        remote: document.getElementById('remote').value,
+        job_type: document.getElementById('job_type').value,
+        anonymous_search: localStorage.getItem('guestMode') === 'true',
+      };
+      
+      try {
+        if (activeTab === 'search') {
+          await runQuickSearch(filters);
+        }
+      } catch (e) {
+        console.error('Search error:', e);
+        showNotification('Search failed. Check console for details.', 'error');
+        btn.textContent = originalText;
+        btn.disabled = false;
+        btn.classList.remove('searching');
+        status.textContent = '';
+      }
+    }
+    
+    async function runQuickSearch(filters) {
+      const keywords = document.getElementById('keywords').value.trim();
+      const locationRaw = document.getElementById('location').value.trim();
+      const locations = locationRaw.split(',').map(s => s.trim()).filter(Boolean);
+
+      if (!keywords || locations.length === 0) {
+        showNotification('Please enter keywords and location.', 'error');
+        return;
+      }
+
+      if (!userQueries.includes(keywords)) userQueries.push(keywords);
+      const aiQueries = Array.from(unifiedSelected).map(i => unifiedSuggestions[i]?.query).filter(Boolean);
+      const queries = Array.from(new Set([...userQueries, ...aiQueries]));
+      if (queries.length === 0) {
+        showNotification('Please add at least one query to run.', 'error');
+        return;
+      }
+
+      const resp = await fetch('/api/search/run-batch', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          queries,
+          locations,
+          filters,
+          anonymous_search: filters.anonymous_search,
+        }),
+      });
+      const data = await resp.json();
+      if (!resp.ok || data.error) {
+        showNotification(data.error || 'Batch search failed.', 'error');
+        return;
+      }
+      showNotification(`Started ${data.total_searches} searches`, 'success');
+      window.location.href = '/jobs';
+    }
+    
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+    
+    // ===================
+    // Filter Management
+    // ===================
+    const filterLabels = {
+      date_posted: { '24h': 'Past 24h', 'week': 'Past week', 'month': 'Past month' },
+      experience_level: { 'entry': 'Entry level', 'associate': 'Associate', 'mid_senior': 'Mid-Senior', 'director': 'Director', 'executive': 'Executive' },
+      remote: { 'onsite': 'On-site', 'remote': 'Remote', 'hybrid': 'Hybrid' },
+      job_type: { 'full_time': 'Full-time', 'part_time': 'Part-time', 'contract': 'Contract' }
+    };
+    
+    function getActiveFilters() {
+      const filters = [];
+      
+      if (document.getElementById('easy_apply').checked) {
+        filters.push({ id: 'easy_apply', label: 'Easy Apply', type: 'checkbox' });
+      }
+      
+      ['date_posted', 'experience_level', 'remote', 'job_type'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el && el.value) {
+          filters.push({ 
+            id: id, 
+            label: filterLabels[id][el.value] || el.value,
+            type: 'select',
+            value: el.value
+          });
+        }
+      });
+      
+      return filters;
+    }
+    
+    function updateFilters() {
+      const filters = getActiveFilters();
+      const count = filters.length;
+      
+      // Update badge count
+      const countBadge = document.getElementById('filter-count');
+      if (countBadge) {
+        countBadge.textContent = count;
+        countBadge.style.display = count > 0 ? 'inline-flex' : 'none';
+      }
+      
+      // Render active filter pills
+      renderFilterPills(filters);
+    }
+    
+    function renderFilterPills(filters) {
+      const container = document.getElementById('active-filters');
+      if (!container) return;
+      
+      if (filters.length === 0) {
+        container.innerHTML = '';
+        return;
+      }
+      
+      let html = filters.map(f => `
+        <span class="filter-pill">
+          ${f.label}
+          <button class="remove-filter" onclick="clearFilter('${f.id}', '${f.type}')" title="Remove filter">&times;</button>
+        </span>
+      `).join('');
+      
+      if (filters.length > 1) {
+        html += `<button class="reset-filters-btn" onclick="resetAllFilters()">Reset all</button>`;
+      }
+      
+      container.innerHTML = html;
+    }
+    
+    function clearFilter(id, type) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      
+      if (type === 'checkbox') {
+        el.checked = false;
+      } else {
+        el.value = '';
+      }
+      updateFilters();
+    }
+    
+    function resetAllFilters() {
+      document.getElementById('easy_apply').checked = false;
+      document.getElementById('date_posted').value = '';
+      document.getElementById('experience_level').value = '';
+      document.getElementById('remote').value = '';
+      document.getElementById('job_type').value = '';
+      updateFilters();
+    }
+    
+    // ===================
+    // Validation
+    // ===================
+    function validateQuickSearch() {
+      const keywords = document.getElementById('keywords').value.trim();
+      const location = document.getElementById('location').value.trim();
+      const keywordsGroup = document.getElementById('keywords-group');
+      const locationGroup = document.getElementById('location-group');
+      
+      let isValid = true;
+      
+      // Validate keywords
+      if (keywords.length === 0) {
+        keywordsGroup.classList.remove('has-success');
+        keywordsGroup.classList.remove('has-error');
+      } else if (keywords.length < 2) {
+        keywordsGroup.classList.add('has-error');
+        keywordsGroup.classList.remove('has-success');
+        isValid = false;
+      } else {
+        keywordsGroup.classList.remove('has-error');
+        keywordsGroup.classList.add('has-success');
+      }
+      
+      // Validate location
+      if (location.length === 0) {
+        locationGroup.classList.remove('has-success');
+        locationGroup.classList.remove('has-error');
+      } else if (location.length < 2) {
+        locationGroup.classList.add('has-error');
+        locationGroup.classList.remove('has-success');
+        isValid = false;
+      } else {
+        locationGroup.classList.remove('has-error');
+        locationGroup.classList.add('has-success');
+      }
+      
+      updateSearchButton();
+      return isValid && keywords.length >= 2 && location.length >= 2;
+    }
+    
+    function isSearchValid() {
+      if (activeTab === 'search') {
+        const keywords = document.getElementById('keywords').value.trim();
+        const location = document.getElementById('location').value.trim();
+        return keywords.length >= 2 && location.length >= 2;
+      } else if (activeTab === 'careers') {
+        return false;
+      }
+      return false;
+    }
+    
+    // ===================
+    // Tab Badge Updates
+    // ===================
+    function updateTabBadges() {
+      // Smart/AI tabs removed. No-op.
+    }
+    
+    // ===================
+    // Exploration Functions
+    // ===================
+    let explorePollingInterval = null;
+    
+    async function startExploration() {
+      const startBtn = document.getElementById('explore-start-btn');
+      startBtn.disabled = true;
+      startBtn.innerHTML = '<span class="spinner"></span> Starting...';
+      
+      const config = {
+        intensity: document.getElementById('explore_intensity').value,
+        max_searches: parseInt(document.getElementById('explore_max_searches').value) || 50,
+        locations: document.getElementById('explore_locations').value.split(',').map(s => s.trim()).filter(s => s),
+        strategies: Array.from(document.querySelectorAll('.strategy-checkbox input:checked')).map(cb => cb.value),
+        auto_process: true,
+        easy_apply: document.getElementById('easy_apply')?.checked || false,
+        date_posted: document.getElementById('date_posted')?.value || null,
+        experience_level: document.getElementById('experience_level')?.value || null,
+        remote: document.getElementById('remote')?.value || null,
+        job_type: document.getElementById('job_type')?.value || null,
+      };
+      
+      try {
+        const resp = await fetch('/api/explore/start', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(config)
+        });
+        const data = await resp.json();
+        
+        if (data.success) {
+          showNotification('Exploration started!', 'success');
+          updateExploreUI(data.status);
+          startExplorePolling();
+        } else {
+          showNotification(data.error || 'Failed to start exploration', 'error');
+          resetExploreButtons();
+        }
+      } catch (err) {
+        console.error('Error starting exploration:', err);
+        showNotification('Failed to start exploration', 'error');
+        resetExploreButtons();
+      }
+    }
+    
+    async function pauseExploration() {
+      try {
+        const resp = await fetch('/api/explore/pause', { method: 'POST' });
+        const data = await resp.json();
+        
+        if (data.success) {
+          showNotification('Exploration paused', 'info');
+          updateExploreUI(data.status);
+          stopExplorePolling();
+        } else {
+          showNotification(data.error || 'Failed to pause', 'error');
+        }
+      } catch (err) {
+        console.error('Error pausing exploration:', err);
+        showNotification('Failed to pause exploration', 'error');
+      }
+    }
+    
+    async function resumeExploration() {
+      const resumeBtn = document.getElementById('explore-resume-btn');
+      resumeBtn.disabled = true;
+      
+      try {
+        const resp = await fetch('/api/explore/resume', { method: 'POST' });
+        const data = await resp.json();
+        
+        if (data.success) {
+          showNotification('Exploration resumed!', 'success');
+          updateExploreUI(data.status);
+          startExplorePolling();
+        } else {
+          showNotification(data.error || 'Failed to resume', 'error');
+          resumeBtn.disabled = false;
+        }
+      } catch (err) {
+        console.error('Error resuming exploration:', err);
+        showNotification('Failed to resume exploration', 'error');
+        resumeBtn.disabled = false;
+      }
+    }
+    
+    async function stopExploration() {
+      try {
+        const resp = await fetch('/api/explore/stop', { method: 'POST' });
+        const data = await resp.json();
+        
+        showNotification('Exploration stopped', 'info');
+        if (data.status) {
+          updateExploreUI(data.status);
+        } else {
+          resetExploreButtons();
+        }
+        stopExplorePolling();
+        loadExploreInsights();
+      } catch (err) {
+        console.error('Error stopping exploration:', err);
+        showNotification('Failed to stop exploration', 'error');
+      }
+    }
+    
+    function startExplorePolling() {
+      if (explorePollingInterval) return;
+      
+      explorePollingInterval = setInterval(async () => {
+        try {
+          const resp = await fetch('/api/explore/status');
+          const status = await resp.json();
+          updateExploreUI(status);
+          
+          if (!status.running && !status.paused) {
+            stopExplorePolling();
+            loadExploreInsights();
+          }
+        } catch (err) {
+          console.error('Error polling explore status:', err);
+        }
+      }, 2000);
+    }
+    
+    function stopExplorePolling() {
+      if (explorePollingInterval) {
+        clearInterval(explorePollingInterval);
+        explorePollingInterval = null;
+      }
+    }
+    
+    function updateExploreUI(status) {
+      const statusDot = document.getElementById('explore-status-dot');
+      const statusText = document.getElementById('explore-status-text');
+      const currentDiv = document.getElementById('explore-current');
+      const currentQuery = document.getElementById('explore-current-query');
+      const timer = document.getElementById('explore-timer');
+      
+      const startBtn = document.getElementById('explore-start-btn');
+      const pauseBtn = document.getElementById('explore-pause-btn');
+      const resumeBtn = document.getElementById('explore-resume-btn');
+      const stopBtn = document.getElementById('explore-stop-btn');
+      const configDiv = document.getElementById('explore-config');
+      
+      statusDot.className = 'status-dot ' + status.status;
+      
+      if (status.running) {
+        statusText.textContent = 'Exploring...';
+        startBtn.style.display = 'none';
+        pauseBtn.style.display = 'inline-flex';
+        resumeBtn.style.display = 'none';
+        stopBtn.style.display = 'inline-flex';
+        configDiv.style.display = 'none';
+        if (typeof window.updateJobProgress === 'function') {
+          window.updateJobProgress('job-progress-explore', {
+            running: true,
+            phase: 'Exploring...',
+            total: status.total_searches,
+            completed: status.completed_searches,
+            countLabel: status.completed_searches + '/' + status.total_searches + ' searches',
+            detailLabel: status.total_jobs_found + ' jobs found (' + status.unique_jobs + ' new)',
+          });
+        }
+        currentDiv.style.display = 'block';
+        if (status.current_query) {
+          currentQuery.textContent = '"' + status.current_query + '" in ' + (status.current_location || 'Unknown');
+        }
+        if (status.elapsed_time_seconds) {
+          const elapsed = formatTime(status.elapsed_time_seconds);
+          const remaining = status.time_remaining_seconds ? formatTime(status.time_remaining_seconds) : '--:--';
+          timer.textContent = elapsed + ' / ~' + remaining;
+        }
+      } else if (status.paused) {
+        statusText.textContent = 'Paused';
+        startBtn.style.display = 'none';
+        pauseBtn.style.display = 'none';
+        resumeBtn.style.display = 'inline-flex';
+        resumeBtn.disabled = false;
+        stopBtn.style.display = 'inline-flex';
+        configDiv.style.display = 'none';
+        if (typeof window.updateJobProgress === 'function') {
+          window.updateJobProgress('job-progress-explore', {
+            running: true,
+            phase: 'Paused',
+            total: status.total_searches,
+            completed: status.completed_searches,
+            countLabel: status.completed_searches + '/' + status.total_searches + ' searches',
+            detailLabel: status.total_jobs_found + ' jobs found (' + status.unique_jobs + ' new)',
+          });
+        }
+        currentDiv.style.display = 'none';
+      } else {
+        statusText.textContent = status.status === 'completed' ? 'Completed' : 'Ready to Explore';
+        resetExploreButtons();
+        if (typeof window.updateJobProgress === 'function') {
+          window.updateJobProgress('job-progress-explore', { running: false });
+        }
+        currentDiv.style.display = 'none';
+        timer.textContent = '';
+      }
+      
+      // Update badge
+      const badge = document.getElementById('explore-tab-badge');
+      if (badge && status.total_jobs_found > 0) {
+        badge.textContent = status.total_jobs_found;
+        badge.style.display = 'inline-flex';
+      }
+    }
+    
+    function resetExploreButtons() {
+      document.getElementById('explore-start-btn').style.display = 'inline-flex';
+      document.getElementById('explore-start-btn').disabled = false;
+      document.getElementById('explore-start-btn').innerHTML = `
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;margin-right:8px;">
+          <polygon points="5 3 19 12 5 21 5 3"></polygon>
+        </svg>
+        Start Exploration
+      `;
+      document.getElementById('explore-pause-btn').style.display = 'none';
+      document.getElementById('explore-resume-btn').style.display = 'none';
+      document.getElementById('explore-stop-btn').style.display = 'none';
+      document.getElementById('explore-config').style.display = 'block';
+    }
+    
+    function formatTime(seconds) {
+      const mins = Math.floor(seconds / 60);
+      const secs = Math.floor(seconds % 60);
+      return String(mins).padStart(2, '0') + ':' + String(secs).padStart(2, '0');
+    }
+    
+    async function loadExploreInsights() {
+      try {
+        const resp = await fetch('/api/explore/insights');
+        const data = await resp.json();
+        
+        if (data.insights) {
+          const insightsDiv = document.getElementById('explore-insights');
+          insightsDiv.style.display = 'block';
+          
+          document.getElementById('insight-total-searches').textContent = data.insights.total_searches || 0;
+          document.getElementById('insight-jobs-found').textContent = data.insights.total_jobs_found || 0;
+          document.getElementById('insight-effectiveness').textContent = 
+            (data.insights.avg_effectiveness || 0).toFixed(1) + '%';
+          
+          // Show top queries if available
+          if (data.insights.top_performing_queries && data.insights.top_performing_queries.length > 0) {
+            const topSection = document.getElementById('top-queries-section');
+            const topList = document.getElementById('top-queries-list');
+            topSection.style.display = 'block';
+            topList.innerHTML = '';
+            
+            data.insights.top_performing_queries.slice(0, 5).forEach(q => {
+              const item = document.createElement('div');
+              item.className = 'top-query-item';
+              item.innerHTML = `
+                <span class="query-name">${escapeHtml(q.keywords)}</span>
+                <span class="query-score">${q.effectiveness_score}%</span>
+              `;
+              topList.appendChild(item);
+            });
+          }
+        }
+      } catch (err) {
+        console.error('Error loading insights:', err);
+      }
+    }
+    
+    async function checkExploreStatus() {
+      try {
+        const resp = await fetch('/api/explore/status');
+        const status = await resp.json();
+        
+        if (status.running || status.paused) {
+          updateExploreUI(status);
+          if (status.running) {
+            startExplorePolling();
+          }
+        }
+        
+        // Always try to load insights
+        loadExploreInsights();
+      } catch (err) {
+        console.error('Error checking explore status:', err);
+      }
+    }
+    
+    // ===================
+    // Careers Tab (Company Career Sites)
+    // ===================
+    let trackedCompanies = [];
+    let careersScrapePolling = null;
+    
+    async function loadCompanies() {
+      const loading = document.getElementById('careers-loading');
+      const empty = document.getElementById('careers-empty');
+      const list = document.getElementById('careers-companies-list');
+      
+      try {
+        const resp = await fetch('/api/companies');
+        const data = await resp.json();
+        
+        trackedCompanies = data.companies || [];
+        loading.style.display = 'none';
+        
+        if (trackedCompanies.length === 0) {
+          empty.style.display = 'flex';
+          document.getElementById('scrape-all-btn').style.display = 'none';
+        } else {
+          empty.style.display = 'none';
+          document.getElementById('scrape-all-btn').style.display = 'inline-flex';
+          renderCompanies();
+        }
+        
+        updateCareersBadge();
+      } catch (err) {
+        console.error('Error loading companies:', err);
+        loading.innerHTML = '<span style="color:var(--accent-error)">Failed to load companies</span>';
+      }
+    }
+    
+    function renderCompanies() {
+      const list = document.getElementById('careers-companies-list');
+      const loading = document.getElementById('careers-loading');
+      const empty = document.getElementById('careers-empty');
+      
+      loading.style.display = 'none';
+      empty.style.display = 'none';
+      
+      const companyCards = trackedCompanies.map(company => {
+        const initials = company.name.substring(0, 2).toUpperCase();
+        const lastScraped = company.last_scraped 
+          ? formatRelativeTime(new Date(company.last_scraped))
+          : 'Never';
+        
+        return `
+          <div class="careers-company-card ${company.enabled ? '' : 'disabled'}" data-company-id="${company.id}">
+            <div class="company-card-row">
+              <div class="company-logo-placeholder">${initials}</div>
+              <div class="company-info">
+                <div class="company-name">${escapeHtml(company.name)}</div>
+                <div class="company-meta">
+                  <span class="ats-badge ${company.ats_type}">${company.ats_type}</span>
+                  <span>•</span>
+                  <span class="company-last-scraped">Last: ${lastScraped}</span>
+                </div>
+              </div>
+              <div class="company-stats">
+                <span class="company-jobs-count">${company.total_jobs || 0} jobs</span>
+                ${(company.pending_review_count > 0) ? `
+                  <span class="company-pending-review" style="margin-left:6px;">
+                    <a href="/careers/review" style="font-size:var(--text-xs);color:var(--accent-info);">${company.pending_review_count} pending review</a>
+                  </span>
+                ` : ''}
+              </div>
+              <div class="company-actions">
+                <button class="company-action-btn" onclick="scrapeCompany(${company.id})" title="Scrape now">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 12a9 9 0 1 1-6.219-8.56"></path>
+                  </svg>
+                </button>
+                <button class="company-action-btn ${company.enabled ? '' : 'active'}" onclick="toggleCompanyEnabled(${company.id}, ${!company.enabled})" title="${company.enabled ? 'Disable' : 'Enable'}">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    ${company.enabled 
+                      ? '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle>'
+                      : '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line>'
+                    }
+                  </svg>
+                </button>
+                <button class="company-action-btn danger" onclick="deleteCompany(${company.id})" title="Delete">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="3 6 5 6 21 6"></polyline>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                  </svg>
+                </button>
+              </div>
+            </div>
+            <div class="company-row-progress" id="company-progress-${company.id}" aria-busy="false" aria-label="Scraping in progress" data-company-id="${company.id}">
+              <div class="company-row-progress-label">Scraping...</div>
+              <div class="progress-bar-container">
+                <div class="progress-bar company-row-progress-bar indeterminate"></div>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+      
+      list.innerHTML = companyCards;
+    }
+    
+    async function validateCareersUrl() {
+      const input = document.getElementById('careers_url');
+      const validation = document.getElementById('careers-url-validation');
+      const addBtn = document.getElementById('add-company-btn');
+      const nameInput = document.getElementById('careers_company_name');
+      const url = input.value.trim();
+      
+      if (!url) {
+        validation.textContent = '';
+        validation.className = 'validation-message';
+        addBtn.disabled = true;
+        return;
+      }
+      
+      validation.textContent = 'Validating...';
+      validation.className = 'validation-message';
+      
+      try {
+        const resp = await fetch('/api/careers/validate-url', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url: url })
+        });
+        const data = await resp.json();
+        
+        if (data.valid) {
+          validation.textContent = data.message;
+          validation.className = 'validation-message success';
+          addBtn.disabled = false;
+          
+          if (data.suggested_name && !nameInput.value) {
+            nameInput.placeholder = data.suggested_name;
+          }
+        } else {
+          validation.textContent = data.message || data.error || 'Invalid URL';
+          validation.className = 'validation-message error';
+          addBtn.disabled = true;
+        }
+      } catch (err) {
+        validation.textContent = 'Validation failed';
+        validation.className = 'validation-message error';
+        addBtn.disabled = true;
+      }
+    }
+    
+    async function addCompany() {
+      const urlInput = document.getElementById('careers_url');
+      const nameInput = document.getElementById('careers_company_name');
+      const addBtn = document.getElementById('add-company-btn');
+      
+      const url = urlInput.value.trim();
+      const name = nameInput.value.trim() || nameInput.placeholder;
+      
+      if (!url) return;
+      
+      addBtn.disabled = true;
+      addBtn.innerHTML = '<span class="btn-spinner"></span> Adding...';
+      
+      let data;
+      try {
+        const resp = await fetch('/api/companies', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ careers_url: url, name: name })
+        });
+        try {
+          data = await resp.json();
+        } catch (parseErr) {
+          data = { success: false, error: resp.ok ? 'Invalid response from server' : 'Request failed' };
+        }
+        if (resp.ok && data.success && data.company) {
+          const companyName = data.company.name || 'Company';
+          showNotification('Added ' + companyName, 'success');
+          urlInput.value = '';
+          nameInput.value = '';
+          nameInput.placeholder = 'Auto-detected';
+          document.getElementById('careers-url-validation').textContent = '';
+        } else {
+          showNotification(data.error || 'Failed to add company', 'error');
+        }
+      } catch (err) {
+        showNotification('Failed to add company', 'error');
+      } finally {
+        addBtn.disabled = false;
+        addBtn.innerHTML = `
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;margin-right:6px;">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="16"></line>
+            <line x1="8" y1="12" x2="16" y2="12"></line>
+          </svg>
+          Add Company
+        `;
+        await loadCompanies();
+      }
+    }
+    
+    function getCareersLocationFilters() {
+      const input = document.getElementById('careers_location_filter');
+      if (!input || !input.value.trim()) return [];
+      return input.value.split(',').map(s => s.trim()).filter(Boolean);
+    }
+
+    async function scrapeCompany(companyId) {
+      const card = document.querySelector(`.careers-company-card[data-company-id="${companyId}"]`);
+      const scrapeBtn = card?.querySelector('.company-actions .company-action-btn');
+      const progressEl = document.getElementById(`company-progress-${companyId}`);
+      if (progressEl) {
+        progressEl.setAttribute('aria-busy', 'true');
+      }
+      if (scrapeBtn) {
+        scrapeBtn.innerHTML = '<span class="btn-spinner" style="width:16px;height:16px;"></span>';
+        scrapeBtn.disabled = true;
+      }
+
+      const locationFilters = getCareersLocationFilters();
+      const body = locationFilters.length ? JSON.stringify({ location_filters: locationFilters }) : undefined;
+      
+      try {
+        const resp = await fetch(`/api/companies/${companyId}/scrape`, {
+          method: 'POST',
+          headers: body ? { 'Content-Type': 'application/json' } : {},
+          body: body
+        });
+        const data = await resp.json();
+        
+        if (data.success) {
+          const n = data.pending_review_count ?? data.new_jobs ?? 0;
+          if (n > 0) {
+            showNotification(`${data.company}: ${n} new job(s) ready to review. <a href="/careers/review" style="color:inherit;font-weight:600;text-decoration:underline;">Review pulled jobs</a>`, 'success');
+          } else {
+            showNotification(`${data.company}: No new jobs (all duplicates)`, 'info');
+          }
+          await loadCompanies();
+        } else {
+          showNotification(data.error || 'Scrape failed', 'error');
+        }
+      } catch (err) {
+        showNotification('Scrape failed', 'error');
+      } finally {
+        if (progressEl) {
+          progressEl.setAttribute('aria-busy', 'false');
+        }
+        if (scrapeBtn) {
+          scrapeBtn.innerHTML = `
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 12a9 9 0 1 1-6.219-8.56"></path>
+            </svg>
+          `;
+          scrapeBtn.disabled = false;
+        }
+      }
+    }
+    
+    async function scrapeAllCompanies() {
+      const btn = document.getElementById('scrape-all-btn');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="btn-spinner" style="width:14px;height:14px;margin-right:4px;"></span> Starting...';
+
+      const locationFilters = getCareersLocationFilters();
+      const body = locationFilters.length ? JSON.stringify({ location_filters: locationFilters }) : undefined;
+
+      try {
+        const resp = await fetch('/api/careers/scrape-all', {
+          method: 'POST',
+          headers: body ? { 'Content-Type': 'application/json' } : {},
+          body: body
+        });
+        const data = await resp.json();
+        
+        if (data.success) {
+          showNotification(`Started scraping ${data.company_count} companies`, 'info');
+          if (typeof window.updateJobProgress === 'function') {
+            window.updateJobProgress('job-progress-careers', { running: true, phase: 'Scraping companies...', total: data.company_count || 0, completed: 0, countLabel: '0/' + (data.company_count || 0) + ' companies', detailLabel: '0 jobs found' });
+          }
+          startCareersScrapePolling();
+        } else {
+          showNotification(data.error || 'Failed to start scrape', 'error');
+          btn.disabled = false;
+          btn.innerHTML = `
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;margin-right:4px;">
+              <path d="M21 12a9 9 0 1 1-6.219-8.56"></path>
+            </svg>
+            Scrape All
+          `;
+        }
+      } catch (err) {
+        showNotification('Failed to start scrape', 'error');
+        btn.disabled = false;
+      }
+    }
+    
+    function startCareersScrapePolling() {
+      if (careersScrapePolling) clearInterval(careersScrapePolling);
+      
+      careersScrapePolling = setInterval(async () => {
+        try {
+          const resp = await fetch('/api/careers/status');
+          const status = await resp.json();
+          
+          updateCareersScrapeProgress(status);
+          
+          if (!status.running) {
+            clearInterval(careersScrapePolling);
+            careersScrapePolling = null;
+            if (typeof window.updateJobProgress === 'function') {
+              window.updateJobProgress('job-progress-careers', { running: false });
+            }
+            const scrapeAllBtn = document.getElementById('scrape-all-btn');
+            if (scrapeAllBtn) {
+              scrapeAllBtn.disabled = false;
+              scrapeAllBtn.innerHTML = `
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;margin-right:4px;">
+                  <path d="M21 12a9 9 0 1 1-6.219-8.56"></path>
+                </svg>
+                Scrape All
+              `;
+            }
+            
+            const total = status.jobs_found ?? 0;
+            const pending = status.pending_review_total ?? total;
+            if (pending > 0) {
+              showNotification(`${pending} new job(s) ready to review. <a href="/careers/review" style="color:inherit;font-weight:600;text-decoration:underline;">Review pulled jobs</a>`, 'success');
+            } else {
+              showNotification('Scraping complete. No new jobs to review.', 'info');
+            }
+            await loadCompanies();
+          }
+        } catch (err) {
+          console.error('Error polling scrape status:', err);
+        }
+      }, 2000);
+    }
+
+    /** If a careers scrape is already running (e.g. user left the page and came back), show progress and start polling. */
+    async function checkCareersScrapeStatus() {
+      try {
+        const resp = await fetch('/api/careers/status');
+        const status = await resp.json();
+        if (status.running) {
+          switchTab('careers');
+          updateCareersScrapeProgress(status);
+          const scrapeAllBtn = document.getElementById('scrape-all-btn');
+          if (scrapeAllBtn) {
+            scrapeAllBtn.disabled = true;
+            scrapeAllBtn.innerHTML = '<span class="btn-spinner" style="width:14px;height:14px;margin-right:4px;"></span> Scraping...';
+          }
+          startCareersScrapePolling();
+        }
+      } catch (err) {
+        console.error('Error checking careers scrape status:', err);
+      }
+    }
+    
+    function updateCareersScrapeProgress(status) {
+      if (typeof window.updateJobProgress === 'function') {
+        window.updateJobProgress('job-progress-careers', {
+          running: !!status.running,
+          phase: status.company_name ? 'Scraping ' + status.company_name + '...' : 'Scraping companies...',
+          total: status.total_companies || 0,
+          completed: status.completed_companies || 0,
+          countLabel: (status.completed_companies || 0) + '/' + (status.total_companies || 0) + ' companies',
+          detailLabel: (status.jobs_found || 0) + ' jobs found',
+        });
+      }
+    }
+    
+    async function stopCareersScrape() {
+      try {
+        await fetch('/api/careers/stop', { method: 'POST' });
+        showNotification('Stop requested', 'info');
+      } catch (err) {
+        console.error('Error stopping scrape:', err);
+      }
+    }
+    
+    async function toggleCompanyEnabled(companyId, enabled) {
+      try {
+        await fetch(`/api/companies/${companyId}/toggle`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ enabled: enabled })
+        });
+        await loadCompanies();
+      } catch (err) {
+        showNotification('Failed to update company', 'error');
+      }
+    }
+    
+    async function deleteCompany(companyId) {
+      if (!confirm('Are you sure you want to remove this company?')) return;
+      
+      try {
+        const resp = await fetch(`/api/companies/${companyId}`, { method: 'DELETE' });
+        const data = await resp.json();
+        
+        if (data.success) {
+          showNotification('Company removed', 'success');
+          await loadCompanies();
+        } else {
+          showNotification(data.error || 'Failed to remove company', 'error');
+        }
+      } catch (err) {
+        showNotification('Failed to remove company', 'error');
+      }
+    }
+    
+    function refreshCompanies() {
+      loadCompanies();
+    }
+    
+    function updateCareersBadge() {
+      const badge = document.getElementById('careers-tab-badge');
+      if (trackedCompanies.length > 0) {
+        badge.textContent = trackedCompanies.length;
+        badge.style.display = 'inline-flex';
+      } else {
+        badge.style.display = 'none';
+      }
+    }
+    
+    function formatRelativeTime(date) {
+      const now = new Date();
+      const diff = Math.floor((now - date) / 1000);
+      
+      if (diff < 60) return 'just now';
+      if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
+      if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
+      if (diff < 604800) return Math.floor(diff / 86400) + 'd ago';
+      return date.toLocaleDateString();
+    }
+    
+    // ===================
+    // Initialization
+    // ===================
+    document.addEventListener('DOMContentLoaded', function() {
+      checkSessionStatus();
+      loadUnifiedAutocomplete();
+      loadUnifiedSuggestions();
+      updateSearchButton();
+      updateFilters();
+      updateTabBadges();
+      checkExploreStatus();
+      loadCompanies();
+      checkCareersScrapeStatus();
+      
+      // Smart/AI tabs were removed; no legacy listeners required.
+    });
+  </script>
+{% endblock %}
+

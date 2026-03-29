@@ -1,0 +1,243 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+  /* ----- Guide page hero ----- */
+  .guide-hero {
+    margin-bottom: var(--space-2xl);
+    max-width: 40rem;
+  }
+  .guide-hero .guide-badge {
+    display: inline-block;
+    font-size: var(--text-xs);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--accent-primary);
+    background: rgba(59, 130, 246, 0.12);
+    border: 1px solid rgba(59, 130, 246, 0.25);
+    padding: var(--space-xs) var(--space-sm);
+    border-radius: var(--radius-full);
+    margin-bottom: var(--space-md);
+  }
+  .guide-hero h1 {
+    font-size: clamp(var(--text-2xl), 4vw, 2rem);
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0 0 var(--space-sm) 0;
+    letter-spacing: -0.025em;
+    line-height: var(--line-height-tight);
+  }
+  .guide-hero p {
+    font-size: var(--text-lg);
+    color: var(--text-secondary);
+    margin: 0;
+    line-height: var(--line-height-relaxed);
+  }
+
+  /* ----- How it works section ----- */
+  .guide-section {
+    margin-bottom: var(--space-2xl);
+  }
+  .guide-section h2 {
+    font-size: var(--text-lg);
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin: 0 0 var(--space-lg) 0;
+  }
+  .guide-steps {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+  }
+  .guide-steps li {
+    display: flex;
+    gap: var(--space-lg);
+    align-items: flex-start;
+    padding: var(--space-lg);
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    transition: border-color var(--transition-fast), box-shadow var(--transition-normal);
+    position: relative;
+    overflow: hidden;
+  }
+  .guide-steps li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background: var(--gradient-primary);
+    opacity: 0.8;
+  }
+  .guide-steps li:hover {
+    border-color: var(--border-default);
+    box-shadow: var(--shadow-md);
+  }
+  .guide-steps li:focus-within {
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 0 1px var(--accent-primary);
+  }
+  .guide-step-icon {
+    flex-shrink: 0;
+    width: 2.75rem;
+    height: 2.75rem;
+    border-radius: var(--radius-lg);
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-subtle);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    color: var(--accent-primary);
+  }
+  .guide-step-body {
+    flex: 1;
+    min-width: 0;
+  }
+  .guide-step-body h3 {
+    font-size: var(--text-base);
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 var(--space-xs) 0;
+  }
+  .guide-step-body p {
+    font-size: var(--text-sm);
+    color: var(--text-secondary);
+    margin: 0 0 var(--space-sm) 0;
+    line-height: var(--line-height-normal);
+  }
+  .guide-step-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+    align-items: center;
+  }
+  .guide-step-actions a {
+    font-size: var(--text-sm);
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-xs);
+  }
+  .guide-step-actions a:focus-visible {
+    outline: none;
+    border-radius: var(--radius-sm);
+    box-shadow: 0 0 0 2px var(--accent-primary);
+  }
+  .guide-step-actions .sep {
+    color: var(--text-muted);
+    font-size: var(--text-xs);
+    user-select: none;
+  }
+
+  /* ----- CTA strip ----- */
+  .guide-cta {
+    margin-top: var(--space-2xl);
+    padding: var(--space-xl);
+    background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-elevated) 100%);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+  }
+  .guide-cta p {
+    font-size: var(--text-sm);
+    color: var(--text-muted);
+    margin: 0 0 var(--space-md) 0;
+  }
+  .guide-cta .guide-cta-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-md);
+    align-items: center;
+  }
+  .guide-cta .guide-cta-buttons .btn {
+    text-decoration: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .guide-steps li { transition: none; }
+  }
+</style>
+
+<div class="guide-hero">
+  <span class="guide-badge" aria-hidden="true">Guide</span>
+  <h1>Getting started</h1>
+  <p>How LinkedIn Copilot works: discover jobs, get AI match scores, and track applications in one place.</p>
+</div>
+
+<section class="guide-section" aria-labelledby="guide-heading">
+  <h2 id="guide-heading">How it works</h2>
+  <ol class="guide-steps">
+    <li>
+      <span class="guide-step-icon" aria-hidden="true">👤</span>
+      <div class="guide-step-body">
+        <h3>Set up your profile</h3>
+        <p>Connect LinkedIn (optional) and upload your CV so we can match jobs to you.</p>
+        <div class="guide-step-actions">
+          <a href="/profile">Set up profile</a>
+        </div>
+      </div>
+    </li>
+    <li>
+      <span class="guide-step-icon" aria-hidden="true">🔍</span>
+      <div class="guide-step-body">
+        <h3>Discover jobs</h3>
+        <p>Search LinkedIn (quick, smart, or AI-assisted) or pull jobs from company career sites.</p>
+        <div class="guide-step-actions">
+          <a href="/?tab=search">Search</a>
+          <span class="sep">·</span>
+          <a href="/?tab=careers">Careers</a>
+        </div>
+      </div>
+    </li>
+    <li>
+      <span class="guide-step-icon" aria-hidden="true">✓</span>
+      <div class="guide-step-body">
+        <h3>Review pulled jobs</h3>
+        <p>For career sites, review and approve jobs before they enter your pipeline.</p>
+        <div class="guide-step-actions">
+          <a href="/careers/review">Review pulled</a>
+        </div>
+      </div>
+    </li>
+    <li>
+      <span class="guide-step-icon" aria-hidden="true">📊</span>
+      <div class="guide-step-body">
+        <h3>Match &amp; track</h3>
+        <p>Jobs are scored by AI (Apply / Consider / Skip). View and filter everything in your Jobs list.</p>
+        <div class="guide-step-actions">
+          <a href="/jobs">Jobs list</a>
+        </div>
+      </div>
+    </li>
+    <li>
+      <span class="guide-step-icon" aria-hidden="true">📤</span>
+      <div class="guide-step-body">
+        <h3>Apply</h3>
+        <p>Mark jobs as applied; use the in-app assistant for LinkedIn Easy Apply.</p>
+        <div class="guide-step-actions">
+          <a href="/jobs">Go to Jobs</a>
+        </div>
+      </div>
+    </li>
+  </ol>
+</section>
+
+<div class="guide-cta">
+  <p>Ready to see your pipeline?</p>
+  <div class="guide-cta-buttons">
+    <a href="/" class="btn">Go to Home</a>
+    <a href="/profile" class="btn btn-secondary">Set up profile</a>
+    <a href="/?tab=search" class="btn btn-secondary">Search jobs</a>
+  </div>
+</div>
+{% endblock %}

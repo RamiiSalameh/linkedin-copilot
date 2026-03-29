@@ -1,0 +1,41 @@
+env:
+  ollama_base_url: ${OLLAMA_BASE_URL:-http://localhost:11434}
+  ollama_model: ${OLLAMA_MODEL:-qwen2.5-coder:7b}
+  headless: ${HEADLESS:-false}
+  allow_final_submit: ${ALLOW_FINAL_SUBMIT:-false}
+  default_resume_path: ${DEFAULT_RESUME_PATH:-./data/resumes/sample_resume.txt}
+  default_profile_path: ${DEFAULT_PROFILE_PATH:-./data/profiles/profile.json}
+  database_path: ${DATABASE_PATH:-./data/linkedin_copilot.sqlite3}
+  dry_run: ${DRY_RUN:-true}
+
+browser:
+  start_url: "https://www.linkedin.com/jobs/"
+  timeout_seconds: 60
+  navigation_retry_attempts: 3
+  screenshot_dir: "./data/screenshots"
+
+logging:
+  level: "INFO"
+  log_dir: "./data/logs"
+
+search_defaults:
+  location: "Israel"
+  easy_apply_only: true
+  date_posted: "past_week"
+  experience_levels:
+    - "mid"
+    - "senior"
+
+safety:
+  allow_final_submit: false
+  risky_button_texts:
+    - "submit"
+    - "apply"
+    - "send application"
+    - "review and submit"
+    - "continue to submit"
+
+data:
+  raw_jobs_dir: "./data/raw_jobs"
+  exports_dir: "./data/exports"
+

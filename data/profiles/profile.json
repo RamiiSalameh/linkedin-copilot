@@ -1,0 +1,89 @@
+{
+  "full_name": "Sample User",
+  "email": "sample.user@example.com",
+  "phone": "+972-50-000-0000",
+  "city": "Tel Aviv",
+  "country": "Israel",
+  "linkedin_url": "https://www.linkedin.com/in/sample-user",
+  "github_url": "https://github.com/sample-user",
+  "portfolio_url": "https://sample-user.dev",
+  "authorized_to_work_regions": ["Israel", "EU (remote)", "US (contract)"],
+  "years_experience_by_skill": {
+    "python": 6,
+    "backend": 5,
+    "django": 4,
+    "fastapi": 3,
+    "sql": 5,
+    "aws": 3
+  },
+  "top_skills": [
+    "Python",
+    "Backend development",
+    "Distributed systems",
+    "APIs",
+    "PostgreSQL",
+    "AWS"
+  ],
+  "preferred_titles": [
+    "Senior Python Engineer",
+    "Backend Engineer",
+    "Software Engineer"
+  ],
+  "preferred_locations": [
+    "Israel",
+    "Remote - Europe",
+    "Remote - US (overlap)"
+  ],
+  "salary_preferences": {
+    "currency": "USD",
+    "range_min": 90000,
+    "range_max": 150000,
+    "note": "Flexible depending on role, equity, and remote policy."
+  },
+  "work_preferences": {
+    "remote": true,
+    "hybrid": true,
+    "on_site": false,
+    "preferred_time_zones": ["Europe", "Israel", "US East"],
+    "company_size": ["startup", "scale-up", "mid-size"]
+  },
+  "education": [
+    {
+      "institution": "Sample University",
+      "degree": "BSc Computer Science",
+      "start_year": 2014,
+      "end_year": 2018
+    }
+  ],
+  "past_roles": [
+    {
+      "title": "Senior Backend Engineer",
+      "company": "ExampleCorp",
+      "start_year": 2021,
+      "end_year": 2025,
+      "highlights": [
+        "Led design and implementation of high-traffic APIs.",
+        "Improved system reliability and observability."
+      ]
+    },
+    {
+      "title": "Software Engineer",
+      "company": "StartupX",
+      "start_year": 2018,
+      "end_year": 2021,
+      "highlights": [
+        "Built core microservices in Python.",
+        "Owned data pipeline and ETL jobs."
+      ]
+    }
+  ],
+  "canned_answers": {
+    "work_authorization": "I am authorized to work in Israel without sponsorship and open to remote contracts globally.",
+    "sponsorship": "I do not currently require visa sponsorship for remote roles; in-person relocation would require sponsorship.",
+    "years_experience": "I have 6+ years of professional experience with Python and backend engineering.",
+    "notice_period": "My standard notice period is 2-4 weeks, flexible depending on circumstances.",
+    "relocation": "Open to relocation for exceptional opportunities with relocation support.",
+    "remote_preference": "Strong preference for remote-first or remote-friendly teams with at least 4 hours overlap with Israel time."
+  }
+}
+

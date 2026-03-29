@@ -1,0 +1,14 @@
+Sample User
+Senior Python / Backend Engineer
+
+Summary:
+- Senior backend engineer with 6+ years of experience building API-driven services in Python.
+- Focused on reliability, observability, and developer experience.
+
+Experience:
+- Senior Backend Engineer @ ExampleCorp (2021-2025)
+- Software Engineer @ StartupX (2018-2021)
+
+Skills:
+- Python, FastAPI, Django, SQL, PostgreSQL, Redis, Kafka, AWS, Docker, CI/CD
+

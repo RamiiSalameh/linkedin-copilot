@@ -1,0 +1,224 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+  /* ----- Page hero (shared pattern with dashboard) ----- */
+  .page-hero {
+    margin-bottom: var(--space-2xl);
+    max-width: 42rem;
+  }
+  .page-hero h1 {
+    font-size: clamp(var(--text-2xl), 4vw, 2rem);
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0 0 var(--space-md) 0;
+    letter-spacing: -0.025em;
+    line-height: var(--line-height-tight);
+  }
+  .page-hero p {
+    font-size: var(--text-lg);
+    color: var(--text-secondary);
+    margin: 0;
+    line-height: var(--line-height-relaxed);
+  }
+
+  /* ----- How it works ----- */
+  .home-how-it-works {
+    margin-bottom: var(--space-2xl);
+  }
+  .home-how-it-works h2 {
+    font-size: var(--text-xl);
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 var(--space-lg) 0;
+    letter-spacing: -0.01em;
+  }
+  .home-steps {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+  }
+  .home-steps li {
+    display: flex;
+    gap: var(--space-lg);
+    align-items: flex-start;
+    padding: var(--space-lg);
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    transition: border-color var(--transition-fast), box-shadow var(--transition-normal), transform var(--transition-fast);
+  }
+  .home-steps li:hover {
+    border-color: var(--border-default);
+    box-shadow: var(--shadow-md);
+  }
+  .home-steps li:focus-within {
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 0 1px var(--accent-primary);
+  }
+  .home-step-num {
+    flex-shrink: 0;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: var(--radius-full);
+    background: var(--gradient-primary);
+    color: white;
+    font-weight: 700;
+    font-size: var(--text-base);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .home-step-body {
+    flex: 1;
+    min-width: 0;
+  }
+  .home-step-body h3 {
+    font-size: var(--text-base);
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 var(--space-xs) 0;
+  }
+  .home-step-body p {
+    font-size: var(--text-sm);
+    color: var(--text-secondary);
+    margin: 0 0 var(--space-sm) 0;
+    line-height: var(--line-height-normal);
+  }
+  .home-step-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+    align-items: center;
+  }
+  .home-step-actions a {
+    font-size: var(--text-sm);
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-xs);
+  }
+  .home-step-actions a:focus-visible {
+    outline: none;
+    border-radius: var(--radius-sm);
+    box-shadow: 0 0 0 2px var(--accent-primary);
+  }
+  .home-step-actions .sep {
+    color: var(--text-muted);
+    font-size: var(--text-xs);
+    user-select: none;
+  }
+
+  /* ----- Get started CTA block ----- */
+  .home-ctas {
+    margin-top: var(--space-2xl);
+    padding: var(--space-xl);
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+  }
+  .home-ctas .home-ctas-heading {
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin: 0 0 var(--space-md) 0;
+  }
+  .home-cta-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-md);
+    align-items: center;
+  }
+  .home-cta-group .btn {
+    text-decoration: none;
+  }
+  .home-cta-group .btn:first-child {
+    font-weight: 600;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .home-steps li {
+      transition: none;
+    }
+  }
+</style>
+
+<div class="page-hero">
+  <h1>Find and track jobs with AI-powered matching.</h1>
+  <p>LinkedIn Copilot helps you discover jobs from LinkedIn and company career sites, get match scores based on your CV, and track applications—all in one place.</p>
+</div>
+
+<section class="home-how-it-works" aria-labelledby="how-it-works-heading">
+  <h2 id="how-it-works-heading">How it works</h2>
+  <ol class="home-steps">
+    <li>
+      <span class="home-step-num" aria-hidden="true">1</span>
+      <div class="home-step-body">
+        <h3>Set up your profile</h3>
+        <p>Connect LinkedIn (optional) and upload your CV so we can match jobs to you.</p>
+        <div class="home-step-actions">
+          <a href="/profile">Set up profile</a>
+        </div>
+      </div>
+    </li>
+    <li>
+      <span class="home-step-num" aria-hidden="true">2</span>
+      <div class="home-step-body">
+        <h3>Discover jobs</h3>
+        <p>Search LinkedIn (quick, smart, or AI-assisted) or pull jobs from company career sites.</p>
+        <div class="home-step-actions">
+          <a href="/?tab=search">Search</a>
+          <span class="sep">·</span>
+          <a href="/?tab=careers">Careers</a>
+        </div>
+      </div>
+    </li>
+    <li>
+      <span class="home-step-num" aria-hidden="true">3</span>
+      <div class="home-step-body">
+        <h3>Review pulled jobs</h3>
+        <p>For career sites, review and approve jobs before they enter your pipeline.</p>
+        <div class="home-step-actions">
+          <a href="/careers/review">Review pulled</a>
+        </div>
+      </div>
+    </li>
+    <li>
+      <span class="home-step-num" aria-hidden="true">4</span>
+      <div class="home-step-body">
+        <h3>Match &amp; track</h3>
+        <p>Jobs are scored by AI (Apply / Consider / Skip). View and filter everything in your Jobs list.</p>
+        <div class="home-step-actions">
+          <a href="/jobs">Jobs list</a>
+        </div>
+      </div>
+    </li>
+    <li>
+      <span class="home-step-num" aria-hidden="true">5</span>
+      <div class="home-step-body">
+        <h3>Apply</h3>
+        <p>Mark jobs as applied; use the in-app assistant for LinkedIn Easy Apply.</p>
+        <div class="home-step-actions">
+          <a href="/jobs">Go to Jobs</a>
+        </div>
+      </div>
+    </li>
+  </ol>
+</section>
+
+<div class="home-ctas">
+  <p class="home-ctas-heading" id="get-started-heading">Get started</p>
+  <div class="home-cta-group" role="group" aria-labelledby="get-started-heading">
+    <a href="/profile" class="btn">Set up profile</a>
+    <a href="/?tab=search" class="btn btn-secondary">Search jobs</a>
+    <a href="/jobs" class="btn btn-secondary">View jobs</a>
+  </div>
+</div>
+{% endblock %}

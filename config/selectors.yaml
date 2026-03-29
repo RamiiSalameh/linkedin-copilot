@@ -1,0 +1,40 @@
+linkedin:
+  search:
+    keyword_input: "input[aria-label='Search job titles or companies']"
+    location_input: "input[aria-label='Search location']"
+    search_button: "button[aria-label='Search']"
+    easy_apply_toggle: "label:has-text('Easy Apply')"
+    job_cards: "li.jobs-search-results__list-item"
+    job_card_title: "a.job-card-list__title"
+    job_card_company: "a.job-card-container__company-name"
+    job_card_location: "span.job-card-container__metadata-item"
+    job_card_date: "time"
+    job_card_easy_apply_badge: "span:has-text('Easy Apply')"
+    next_page_button: "button[aria-label='Next']"
+
+  job_detail:
+    title: "h1.top-card-layout__title"
+    company: "a.topcard__org-name-link, span.topcard__flavor"
+    location: "span.topcard__flavor--bullet"
+    description: "div.description__text, div.show-more-less-html__markup"
+    recruiter: "a.message-the-recruiter__cta, a.jobs-poster__name"
+
+  apply:
+    easy_apply_button: "button.jobs-apply-button, button:has-text('Easy Apply')"
+    next_button: "button[aria-label='Continue to next step'], button:has-text('Next')"
+    review_button: "button:has-text('Review')"
+    submit_button_candidates:
+      - "button:has-text('Submit')"
+      - "button:has-text('Send application')"
+      - "button:has-text('Review and submit')"
+      - "button:has-text('Apply')"
+    save_job_button: "button:has-text('Save')"
+
+  forms:
+    text_input: "input[type='text'], input[type='email'], input[type='tel']"
+    textarea: "textarea"
+    radio: "input[type='radio']"
+    checkbox: "input[type='checkbox']"
+    select: "select"
+    error_message: "[data-test-form-element-error-text]"
+
