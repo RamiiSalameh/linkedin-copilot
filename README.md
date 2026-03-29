@@ -64,10 +64,14 @@ pytest
 | `docs/` | Design notes and specs |
 | `.ai/knowlege-base/` | Maintainer-oriented context (handover, flows) |
 
+## Repository
+
+Source: [github.com/RamiiSalameh/linkedin-copilot](https://github.com/RamiiSalameh/linkedin-copilot)
+
 ## Publishing checklist
 
 - [x] `.gitignore` excludes secrets, venv, caches, and local `data/` artifacts
-- [ ] Create an empty GitHub repo, then: `git remote add origin <url>` and `git push -u origin main`
+- [x] Remote `origin` on GitHub and `main` pushed
 - [ ] Add repository **Topics** on GitHub (e.g. `linkedin`, `job-search`, `fastapi`, `playwright`)
 - [ ] In **Settings → Secrets**, do not store `.env`; use GitHub Secrets only for CI if you add workflows later
 

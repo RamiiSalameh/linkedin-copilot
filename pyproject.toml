@@ -9,7 +9,7 @@ description = "Local-first LinkedIn job search and application copilot using Bro
 readme = "linkedin_copilot/README.md"
 requires-python = ">=3.11"
 authors = [
-  { name = "Your Name" }
+  { name = "Rami Salameh" }
 ]
 license = { text = "MIT" }
 dependencies = [
